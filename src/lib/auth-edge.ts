@@ -35,7 +35,7 @@ export async function verifyTokenEdge(token: string): Promise<User | null> {
       role: payload.role as 'admin' | 'manager'
     };
   } catch (error) {
-    console.log('Token verification failed:', error.message);
+    console.log('Token verification failed:', error instanceof Error ? error.message : 'Unknown error');
     return null;
   }
 }
