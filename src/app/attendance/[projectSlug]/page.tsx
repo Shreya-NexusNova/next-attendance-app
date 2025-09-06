@@ -438,8 +438,8 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
               </button>
             </div>
           ) : (
-            <div className="overflow-x-auto overflow-hidden rounded-xl" style={{ boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}>
-              <div className="px-3 sm:px-6 py-3 sm:py-4 text-white text-xs sm:text-sm font-semibold uppercase tracking-wide" style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}>
+            <div className="overflow-hidden rounded-xl" style={{ boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}>
+              <div className="sticky top-0 z-10 px-3 sm:px-6 py-3 sm:py-4 text-white text-xs sm:text-sm font-semibold uppercase tracking-wide" style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}>
                 <div className="grid grid-cols-5 gap-2 sm:gap-4 min-w-[600px]">
                   <div>CONTRACTOR NAME</div>
                   <div className="text-center">PRESENT</div>
@@ -448,6 +448,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                   <div className="text-right">TOTAL OVERTIME HOURS WORKED</div>
                 </div>
               </div>
+              <div className="overflow-x-auto">
               <ul className="divide-y divide-gray-100">
                 {attendanceData.map((item) => (
                   <li key={item.contractor.id} className="px-3 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 transition-colors duration-200">
@@ -509,6 +510,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                   </li>
                 ))}
               </ul>
+              </div>
             </div>
           )}
       </main>

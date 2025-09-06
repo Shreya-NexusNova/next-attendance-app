@@ -51,9 +51,9 @@ body {
 
 /* Modern blur backdrop for modals */
 .modal-backdrop {
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(200px);
-  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(50px);
+  -webkit-backdrop-filter: blur(50px);
+  background: rgba(0, 0, 0, 0.8);
 }
 
 /* Enhanced button styles */
