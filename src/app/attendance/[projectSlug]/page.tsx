@@ -338,32 +338,32 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
       {/* Header */}
       <header className="bg-white shadow-lg sticky top-0 z-50" style={{ boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-5">
-            <div className="flex items-center space-x-5">
+          <div className="flex flex-col lg:flex-row justify-between items-center py-4 sm:py-5 space-y-4 lg:space-y-0">
+            <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 lg:space-x-5">
               <Link
                 href="/dashboard"
-                className="px-4 py-2 rounded-md text-sm font-medium text-white transition-all duration-300 hover:transform hover:-translate-y-1"
+                className="px-3 py-2 sm:px-4 rounded-md text-xs sm:text-sm font-medium text-white transition-all duration-300 hover:transform hover:-translate-y-1"
                 style={{ background: '#6c757d' }}
               >
                 ← Back to Dashboard
               </Link>
-              <h1 className="text-2xl font-bold text-gray-800">
+              <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800 text-center sm:text-left">
                 {project?.name || 'Loading...'}
               </h1>
             </div>
-            <div className="flex items-center space-x-5">
-              <div className="flex items-center space-x-3">
-                <span className="text-sm font-semibold text-gray-700">Date:</span>
+            <div className="flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4 lg:space-x-5">
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <span className="text-xs sm:text-sm font-semibold text-gray-700">Date:</span>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="px-3 py-2 border-2 border-gray-200 rounded-md text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                  className="px-2 py-1 sm:px-3 sm:py-2 border-2 border-gray-200 rounded-md text-xs sm:text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 />
               </div>
               <button
                 onClick={() => router.push('/api/auth/logout')}
-                className="px-4 py-2 rounded-md text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1"
+                className="px-3 py-2 sm:px-4 rounded-md text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 text-xs sm:text-sm"
                 style={{ 
                   background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
                   boxShadow: '0 4px 15px rgba(220, 53, 69, 0.3)'
@@ -377,39 +377,48 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="flex justify-end gap-4 mb-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
+        <div className="">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4 mb-6 sm:mb-8">
             <button
               onClick={() => setShowAddContractor(true)}
-              className="px-6 py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1"
+              className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 text-sm sm:text-base"
               style={{ 
                 background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
                 boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
               }}
             >
-              Add Contractor
+              <span className="hidden sm:inline">Add Contractor</span>
+              <span className="sm:hidden">Add</span>
             </button>
             <button
               onClick={() => setShowExportModal(true)}
-              className="px-6 py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1"
+              className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 text-sm sm:text-base"
               style={{ 
                 background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
                 boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
               }}
             >
-              Export to Excel
+              <span className="hidden sm:inline">Export to Excel</span>
+              <span className="sm:hidden">Export</span>
             </button>
             <button
               onClick={saveAttendance}
               disabled={isSaving}
-              className="px-6 py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               style={{ 
                 background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
                 boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
               }}
             >
-              {isSaving ? 'Saving...' : 'Save Attendance'}
+              {isSaving ? 'Saving...' : (
+                <>
+                  <span className="hidden sm:inline">Save Attendance</span>
+                  <span className="sm:hidden">Save</span>
+                </>
+              )}
             </button>
+          </div>
           </div>
 
           {contractors.length === 0 ? (
@@ -429,9 +438,9 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
               </button>
             </div>
           ) : (
-            <div className="overflow-hidden rounded-xl" style={{ boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}>
-              <div className="px-6 py-4 text-white text-sm font-semibold uppercase tracking-wide" style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}>
-                <div className="grid grid-cols-5 gap-4">
+            <div className="overflow-x-auto overflow-hidden rounded-xl" style={{ boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}>
+              <div className="px-3 sm:px-6 py-3 sm:py-4 text-white text-xs sm:text-sm font-semibold uppercase tracking-wide" style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}>
+                <div className="grid grid-cols-5 gap-2 sm:gap-4 min-w-[600px]">
                   <div>CONTRACTOR NAME</div>
                   <div className="text-center">PRESENT</div>
                   <div className="text-center">ABSENT</div>
@@ -441,22 +450,22 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
               </div>
               <ul className="divide-y divide-gray-100">
                 {attendanceData.map((item) => (
-                  <li key={item.contractor.id} className="px-6 py-4 hover:bg-gray-50 transition-colors duration-200">
-                    <div className="grid grid-cols-5 gap-4 items-center">
-                      <div className="font-semibold text-gray-800 text-lg">
+                  <li key={item.contractor.id} className="px-3 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 transition-colors duration-200">
+                    <div className="grid grid-cols-5 gap-2 sm:gap-4 items-center min-w-[600px]">
+                      <div className="font-semibold text-gray-800 text-sm sm:text-base lg:text-lg">
                         {item.contractor.name}
                       </div>
                       
                       <div className="flex justify-center">
                         <button
                           onClick={() => handleAttendanceChange(item.contractor.id, 'present')}
-                          className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 hover:scale-105 ${
+                          className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 hover:scale-105 ${
                             item.attendance?.status === 'present' 
                               ? 'bg-green-500 border-green-500 text-white shadow-lg' 
                               : 'bg-white border-gray-300 text-gray-400 hover:border-green-500'
                           }`}
                         >
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         </button>
@@ -465,13 +474,13 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                       <div className="flex justify-center">
                         <button
                           onClick={() => handleAttendanceChange(item.contractor.id, 'absent')}
-                          className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 hover:scale-105 ${
+                          className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 hover:scale-105 ${
                             item.attendance?.status === 'absent' 
                               ? 'bg-red-500 border-red-500 text-white shadow-lg' 
                               : 'bg-white border-gray-300 text-gray-400 hover:border-red-500'
                           }`}
                         >
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
@@ -480,18 +489,19 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                       <div className="text-center">
                         <button
                           onClick={() => openOvertimeModal(item.contractor)}
-                          className="px-4 py-2 rounded-lg text-white font-semibold text-sm transition-all duration-300 hover:transform hover:-translate-y-1"
+                          className="px-2 py-1 sm:px-3 sm:py-2 lg:px-4 lg:py-2 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-1"
                           style={{ 
                             background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
                             boxShadow: '0 4px 15px rgba(0, 86, 179, 0.3)'
                           }}
                         >
-                          Select Work Time
+                          <span className="hidden sm:inline">Select Work Time</span>
+                          <span className="sm:hidden">Time</span>
                         </button>
                       </div>
                       
                       <div className="text-right">
-                        <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
+                        <span className="inline-block px-2 py-1 sm:px-3 rounded-full text-xs sm:text-sm font-semibold bg-blue-100 text-blue-800">
                           {item.attendance?.overtime_hours || 0} hours
                         </span>
                       </div>
