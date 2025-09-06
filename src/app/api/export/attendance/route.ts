@@ -67,88 +67,108 @@ export async function GET(request: NextRequest) {
       dates.push(new Date(d).toISOString().split('T')[0]);
     }
 
-    // Create attendance matrix
+    // Create attendance matrix with requested data
     const attendanceMatrix = (contractors as any[]).map(contractor => {
-      const contractorAttendance: any = {
-        'Contractor Name': contractor.name,
-        'Email': contractor.email || '',
-        'Phone': contractor.phone || ''
-      };
-
-      // Initialize all dates as absent
-      dates.forEach(date => {
-        contractorAttendance[date] = 'Absent';
-      });
-
-      // Fill in actual attendance
-      (attendance as any[]).forEach(record => {
-        if (record.contractor_id === contractor.id) {
-          const dateStr = record.date;
-          if (dates.includes(dateStr)) {
-            if (record.status === 'present') {
-              contractorAttendance[dateStr] = record.work_time || 'Present';
-            } else {
-              contractorAttendance[dateStr] = 'Absent';
-            }
-          }
-        }
-      });
+      // Get attendance records for this contractor
+      const contractorAttendanceRecords = (attendance as any[]).filter(
+        record => record.contractor_id === contractor.id
+      );
 
       // Calculate totals
-      const presentDays = (attendance as any[]).filter(
-        record => record.contractor_id === contractor.id && record.status === 'present'
+      const presentDays = contractorAttendanceRecords.filter(
+        record => record.status === 'present'
       ).length;
 
-      const overtimeHours = (attendance as any[]).reduce((total, record) => {
-        if (record.contractor_id === contractor.id) {
-          return total + (record.overtime_hours || 0);
-        }
-        return total;
+      const totalOvertimeHours = contractorAttendanceRecords.reduce((total, record) => {
+        return total + (record.overtime_hours || 0);
       }, 0);
 
-      contractorAttendance['Total Present Days'] = presentDays;
-      contractorAttendance['Total Overtime Hours'] = overtimeHours;
-      contractorAttendance['Total Including Overtime'] = presentDays + overtimeHours;
+      // Get overtime start and end times (from the most recent record with overtime)
+      const latestRecord = contractorAttendanceRecords
+        .filter(record => record.overtime_hours > 0)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
-      return contractorAttendance;
+      const overtimeStartTime = latestRecord?.overtime_start_time || '';
+      const overtimeEndTime = latestRecord?.overtime_end_time || '';
+
+      const contractorData = {
+        'Name': contractor.name,
+        'Email': contractor.email || '',
+        'Phone': contractor.phone || '',
+        'Present or Absent': presentDays > 0 ? 'Present' : 'Absent',
+        'Total Overtime Hours': totalOvertimeHours,
+        'Overtime Start Time': overtimeStartTime,
+        'Overtime End Time': overtimeEndTime
+      };
+
+      return contractorData;
     });
 
     // Create workbook
     const workbook = XLSX.utils.book_new();
 
+    // Add date information to the attendance matrix
+    const attendanceMatrixWithDate = [
+      ['Project Name', project.name],
+      ['Export Date', startDate],
+      ['Total Contractors', (contractors as any[]).length],
+      ['', ''], // Empty row for spacing
+      ['Name', 'Email', 'Phone', 'Present or Absent', 'Total Overtime Hours', 'Overtime Start Time', 'Overtime End Time'], // Header row
+      ...attendanceMatrix.map(item => [
+        item['Name'],
+        item['Email'],
+        item['Phone'],
+        item['Present or Absent'],
+        item['Total Overtime Hours'],
+        item['Overtime Start Time'],
+        item['Overtime End Time']
+      ])
+    ];
+
     // Create main attendance sheet
-    const attendanceSheet = XLSX.utils.json_to_sheet(attendanceMatrix);
+    const attendanceSheet = XLSX.utils.aoa_to_sheet(attendanceMatrixWithDate);
     XLSX.utils.book_append_sheet(workbook, attendanceSheet, 'Attendance');
 
     // Create summary sheet
     const summaryData = [
       ['Project Name', project.name],
       ['Project Description', project.description || ''],
-      ['Export Date Range', `${startDate} to ${endDate}`],
-      ['Total Contractors', contractors.length],
-      ['Export Date', new Date().toISOString().split('T')[0]],
+      ['Export Date', startDate], // Use the selected date instead of range
+      ['Total Contractors', (contractors as any[]).length],
+      ['Export Generated', new Date().toISOString().split('T')[0]],
       ['', ''],
       ['Contractor Summary', ''],
-      ['Name', 'Total Present Days', 'Total Overtime Hours', 'Total Including Overtime']
+      ['Name', 'Email', 'Phone', 'Present or Absent', 'Total Overtime Hours', 'Overtime Start Time', 'Overtime End Time']
     ];
 
     (contractors as any[]).forEach(contractor => {
-      const presentDays = (attendance as any[]).filter(
-        record => record.contractor_id === contractor.id && record.status === 'present'
+      const contractorAttendanceRecords = (attendance as any[]).filter(
+        record => record.contractor_id === contractor.id
+      );
+
+      const presentDays = contractorAttendanceRecords.filter(
+        record => record.status === 'present'
       ).length;
 
-      const overtimeHours = (attendance as any[]).reduce((total, record) => {
-        if (record.contractor_id === contractor.id) {
-          return total + (record.overtime_hours || 0);
-        }
-        return total;
+      const totalOvertimeHours = contractorAttendanceRecords.reduce((total, record) => {
+        return total + (record.overtime_hours || 0);
       }, 0);
+
+      const latestRecord = contractorAttendanceRecords
+        .filter(record => record.overtime_hours > 0)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+
+      const overtimeStartTime = latestRecord?.overtime_start_time || '';
+      const overtimeEndTime = latestRecord?.overtime_end_time || '';
 
       summaryData.push([
         contractor.name,
-        presentDays,
-        overtimeHours,
-        presentDays + overtimeHours
+        contractor.email || '',
+        contractor.phone || '',
+        presentDays > 0 ? 'Present' : 'Absent',
+        totalOvertimeHours,
+        overtimeStartTime,
+        overtimeEndTime
       ]);
     });
 
@@ -161,7 +181,7 @@ export async function GET(request: NextRequest) {
     // Create response with Excel file
     const response = new NextResponse(excelBuffer);
     response.headers.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    response.headers.set('Content-Disposition', `attachment; filename="${project.name.replace(/[^a-z0-9]/gi, '_')}_attendance_${startDate}_to_${endDate}.xlsx"`);
+    response.headers.set('Content-Disposition', `attachment; filename="${project.name.replace(/[^a-z0-9]/gi, '_')}_attendance_${startDate}.xlsx"`);
 
     return response;
   } catch (error) {

@@ -45,11 +45,6 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
   const [isSaving, setIsSaving] = useState(false);
   const [showAddContractor, setShowAddContractor] = useState(false);
   const [newContractor, setNewContractor] = useState({ name: '', email: '', phone: '' });
-  const [showExportModal, setShowExportModal] = useState(false);
-  const [exportDateRange, setExportDateRange] = useState({
-    startDate: new Date().toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0]
-  });
   const [isExporting, setIsExporting] = useState(false);
   const [projectSlug, setProjectSlug] = useState<string>('');
   const [showOvertimeModal, setShowOvertimeModal] = useState(false);
@@ -241,7 +236,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
     setIsExporting(true);
     try {
       const response = await fetch(
-        `/api/export/attendance?projectId=${project.id}&startDate=${exportDateRange.startDate}&endDate=${exportDateRange.endDate}`
+        `/api/export/attendance?projectId=${project.id}&startDate=${selectedDate}&endDate=${selectedDate}`
       );
 
       if (response.ok) {
@@ -249,12 +244,11 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `${project?.name.replace(/[^a-z0-9]/gi, '_')}_attendance_${exportDateRange.startDate}_to_${exportDateRange.endDate}.xlsx`;
+        a.download = `${project?.name.replace(/[^a-z0-9]/gi, '_')}_attendance_${selectedDate}.xlsx`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
-        setShowExportModal(false);
       } else {
         alert('Error exporting attendance');
       }
@@ -392,15 +386,20 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
               <span className="sm:hidden">Add</span>
             </button>
             <button
-              onClick={() => setShowExportModal(true)}
-              className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 text-sm sm:text-base"
+              onClick={exportAttendance}
+              disabled={isExporting}
+              className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ 
                 background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
                 boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
               }}
             >
-              <span className="hidden sm:inline">Export to Excel</span>
-              <span className="sm:hidden">Export</span>
+              {isExporting ? 'Exporting...' : (
+                <>
+                  <span className="hidden sm:inline">Export to Excel</span>
+                  <span className="sm:hidden">Export</span>
+                </>
+              )}
             </button>
             <button
               onClick={saveAttendance}
@@ -576,55 +575,6 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
         </div>
       )}
 
-      {/* Export Modal */}
-      {showExportModal && (
-        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Export Attendance</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Start Date
-                </label>
-                <input
-                  type="date"
-                  value={exportDateRange.startDate}
-                  onChange={(e) => setExportDateRange(prev => ({ ...prev, startDate: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  End Date
-                </label>
-                <input
-                  type="date"
-                  value={exportDateRange.endDate}
-                  onChange={(e) => setExportDateRange(prev => ({ ...prev, endDate: e.target.value }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                type="button"
-                onClick={() => setShowExportModal(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={exportAttendance}
-                disabled={isExporting}
-                className="px-4 py-2 rounded-md text-white font-semibold disabled:opacity-50"
-                style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}
-              >
-                {isExporting ? 'Exporting...' : 'Export'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Overtime Modal */}
       {showOvertimeModal && selectedContractor && (
