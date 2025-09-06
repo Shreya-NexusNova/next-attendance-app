@@ -25,7 +25,10 @@ export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddProject, setShowAddProject] = useState(false);
+  const [showEditProject, setShowEditProject] = useState(false);
+  const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [newProject, setNewProject] = useState({ name: '', description: '' });
+  const [editProject, setEditProject] = useState({ name: '', description: '', status: 'ongoing' });
   const router = useRouter();
 
   useEffect(() => {
@@ -88,6 +91,59 @@ export default function DashboardPage() {
     } catch (error) {
       console.error('Error adding project:', error);
     }
+  };
+
+  const handleEditProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProject) return;
+    
+    try {
+      const response = await fetch(`/api/projects/${editingProject.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editProject),
+      });
+
+      if (response.ok) {
+        setEditProject({ name: '', description: '', status: 'ongoing' });
+        setShowEditProject(false);
+        setEditingProject(null);
+        fetchProjects();
+      }
+    } catch (error) {
+      console.error('Error updating project:', error);
+    }
+  };
+
+  const handleDeleteProject = async (projectId: number) => {
+    if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/projects/${projectId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        fetchProjects();
+      } else {
+        alert('Error deleting project');
+      }
+    } catch (error) {
+      console.error('Error deleting project:', error);
+      alert('Error deleting project');
+    }
+  };
+
+  const openEditModal = (project: Project) => {
+    setEditingProject(project);
+    setEditProject({
+      name: project.name,
+      description: project.description,
+      status: project.status
+    });
+    setShowEditProject(true);
   };
 
   const getStatusColor = (status: string) => {
@@ -236,18 +292,50 @@ export default function DashboardPage() {
                         <span className="mr-2">👥</span>
                         <span className="font-semibold">{project.contractor_count} Contractors</span>
                       </div>
-                      <Link
-                        href={`/attendance/${project.slug}`}
-                        className="w-full px-4 py-2 sm:px-5 sm:py-3 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-1 flex items-center justify-center gap-2"
-                        style={{ 
-                          background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
-                          boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
-                        }}
-                      >
-                        <span>📋</span>
-                        <span className="hidden sm:inline">Manage Attendance</span>
-                        <span className="sm:hidden">Manage</span>
-                      </Link>
+                      
+                      {/* Action Buttons */}
+                      <div className="flex gap-2">
+                        <Link
+                          href={`/attendance/${project.slug}`}
+                          className="flex-1 px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-1 flex items-center justify-center gap-1"
+                          style={{ 
+                            background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
+                            boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
+                          }}
+                        >
+                          <span className="hidden sm:inline">Manage Attendance</span>
+                        </Link>
+                        
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditModal(project);
+                          }}
+                          className="px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-1"
+                          style={{ 
+                            background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                            boxShadow: '0 4px 15px rgba(40, 167, 69, 0.3)'
+                          }}
+                        >
+                          <span className="hidden sm:inline">✏️</span>
+                          <span className="sm:hidden">✏️</span>
+                        </button>
+                        
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProject(project.id);
+                          }}
+                          className="px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-1"
+                          style={{ 
+                            background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                            boxShadow: '0 4px 15px rgba(220, 53, 69, 0.3)'
+                          }}
+                        >
+                          <span className="hidden sm:inline">🗑️</span>
+                          <span className="sm:hidden">🗑️</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -300,6 +388,73 @@ export default function DashboardPage() {
                   style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}
                 >
                   Create Project
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Project Modal */}
+      {showEditProject && editingProject && (
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Edit Project</h3>
+            <form onSubmit={handleEditProject}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Project Name
+                </label>
+                <input
+                  type="text"
+                  value={editProject.name}
+                  onChange={(e) => setEditProject({ ...editProject, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={editProject.description}
+                  onChange={(e) => setEditProject({ ...editProject, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  rows={3}
+                />
+              </div>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </label>
+                <select
+                  value={editProject.status}
+                  onChange={(e) => setEditProject({ ...editProject, status: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="ongoing">Ongoing</option>
+                  <option value="completed">Completed</option>
+                  <option value="paused">Paused</option>
+                </select>
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditProject(false);
+                    setEditingProject(null);
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-md text-white font-semibold"
+                  style={{ background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' }}
+                >
+                  Update Project
                 </button>
               </div>
             </form>

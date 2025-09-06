@@ -44,7 +44,10 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [showAddContractor, setShowAddContractor] = useState(false);
+  const [showEditContractor, setShowEditContractor] = useState(false);
+  const [editingContractor, setEditingContractor] = useState<Contractor | null>(null);
   const [newContractor, setNewContractor] = useState({ name: '', email: '', phone: '' });
+  const [editContractor, setEditContractor] = useState({ name: '', email: '', phone: '' });
   const [isExporting, setIsExporting] = useState(false);
   const [projectSlug, setProjectSlug] = useState<string>('');
   const [showOvertimeModal, setShowOvertimeModal] = useState(false);
@@ -228,6 +231,59 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
     } catch (error) {
       console.error('Error adding contractor:', error);
     }
+  };
+
+  const handleEditContractor = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingContractor) return;
+
+    try {
+      const response = await fetch(`/api/contractors/${editingContractor.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editContractor),
+      });
+
+      if (response.ok) {
+        setEditContractor({ name: '', email: '', phone: '' });
+        setShowEditContractor(false);
+        setEditingContractor(null);
+        fetchContractors();
+      }
+    } catch (error) {
+      console.error('Error updating contractor:', error);
+    }
+  };
+
+  const handleDeleteContractor = async (contractorId: number) => {
+    if (!confirm('Are you sure you want to delete this contractor? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/contractors/${contractorId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        fetchContractors();
+      } else {
+        alert('Error deleting contractor');
+      }
+    } catch (error) {
+      console.error('Error deleting contractor:', error);
+      alert('Error deleting contractor');
+    }
+  };
+
+  const openEditContractorModal = (contractor: Contractor) => {
+    setEditingContractor(contractor);
+    setEditContractor({
+      name: contractor.name,
+      email: contractor.email,
+      phone: contractor.phone
+    });
+    setShowEditContractor(true);
   };
 
   const exportAttendance = async () => {
@@ -439,21 +495,50 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
           ) : (
             <div className="overflow-hidden rounded-xl" style={{ boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}>
               <div className="sticky top-0 z-10 px-3 sm:px-6 py-3 sm:py-4 text-white text-xs sm:text-sm font-semibold uppercase tracking-wide" style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}>
-                <div className="grid grid-cols-5 gap-2 sm:gap-4 min-w-[600px]">
+                <div className="grid grid-cols-6 gap-2 sm:gap-4 min-w-[700px]">
                   <div>CONTRACTOR NAME</div>
                   <div className="text-center">PRESENT</div>
                   <div className="text-center">ABSENT</div>
                   <div className="text-center">OVERTIME HOURS</div>
                   <div className="text-right">TOTAL OVERTIME HOURS WORKED</div>
+                  <div className="text-center">ACTIONS</div>
                 </div>
               </div>
               <div className="overflow-x-auto">
               <ul className="divide-y divide-gray-100">
                 {attendanceData.map((item) => (
                   <li key={item.contractor.id} className="px-3 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 transition-colors duration-200">
-                    <div className="grid grid-cols-5 gap-2 sm:gap-4 items-center min-w-[600px]">
+                    <div className="grid grid-cols-6 gap-2 sm:gap-4 items-center min-w-[700px]">
                       <div className="font-semibold text-gray-800 text-sm sm:text-base lg:text-lg">
-                        {item.contractor.name}
+                        <div className="flex items-center justify-between">
+                          <span>{item.contractor.name}</span>
+                          <div className="flex gap-1 ml-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditContractorModal(item.contractor);
+                              }}
+                              className="p-1 rounded text-green-600 hover:bg-green-100 transition-colors"
+                              title="Edit contractor"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteContractor(item.contractor.id);
+                              }}
+                              className="p-1 rounded text-red-600 hover:bg-red-100 transition-colors"
+                              title="Delete contractor"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
                       </div>
                       
                       <div className="flex justify-center">
@@ -643,6 +728,70 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                 {isSavingOvertime ? 'Saving...' : 'Save'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Contractor Modal */}
+      {showEditContractor && editingContractor && (
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Edit Contractor</h3>
+            <form onSubmit={handleEditContractor}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  value={editContractor.name}
+                  onChange={(e) => setEditContractor({ ...editContractor, name: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={editContractor.email}
+                  onChange={(e) => setEditContractor({ ...editContractor, email: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  value={editContractor.phone}
+                  onChange={(e) => setEditContractor({ ...editContractor, phone: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditContractor(false);
+                    setEditingContractor(null);
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-md text-white font-semibold"
+                  style={{ background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' }}
+                >
+                  Update Contractor
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
