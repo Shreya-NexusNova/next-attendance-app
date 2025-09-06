@@ -261,7 +261,7 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
         <div className="p-6 sm:p-8 lg:p-10">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-5 sm:gap-6 lg:gap-8">
             {projects.length === 0 ? (
               <div className="col-span-full text-center py-20">
                 <div className="text-gray-400 text-6xl mb-4">📋</div>
@@ -314,10 +314,10 @@ export default function DashboardPage() {
                       </div>
                       
                       {/* Action Buttons */}
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-between gap-4">
                         <Link
                           href={`/attendance/${project.slug}`}
-                          className="flex-1 px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-1 flex items-center justify-center"
+                          className="flex-1 px-4 py-2 sm:px-5 sm:py-3 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-1 flex items-center justify-center"
                           style={{ 
                             background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
                             boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'

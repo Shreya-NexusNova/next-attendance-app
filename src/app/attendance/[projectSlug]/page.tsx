@@ -383,15 +383,18 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
 
       if (response.ok) {
         const data = await response.json();
-        alert(`Overtime saved successfully! Total: ${data.overtimeHours} hours`);
+        setSuccessMessage(`Overtime saved successfully! Total: ${data.overtimeHours} hours`);
+        setShowSuccessModal(true);
         setShowOvertimeModal(false);
         fetchAttendance(); // Refresh attendance data
       } else {
-        alert('Error saving overtime');
+        setSuccessMessage('Error saving overtime');
+        setShowSuccessModal(true);
       }
     } catch (error) {
       console.error('Error saving overtime:', error);
-      alert('Error saving overtime');
+      setSuccessMessage('Error saving overtime');
+      setShowSuccessModal(true);
     } finally {
       setIsSavingOvertime(false);
     }
