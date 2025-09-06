@@ -148,7 +148,7 @@ export default function DashboardPage() {
             <div className="flex items-center space-x-5">
               <button
                 onClick={() => setShowAddProject(true)}
-                className="px-5 py-3 rounded-full text-white font-semibold flex items-center space-x-2 transition-all duration-300 hover:transform hover:-translate-y-1"
+                className="px-5 py-3 rounded-lg text-white font-semibold flex items-center space-x-2 transition-all duration-300 hover:transform hover:-translate-y-1"
                 style={{ 
                   background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
                   boxShadow: '0 4px 15px rgba(0, 86, 179, 0.3)'
@@ -157,7 +157,7 @@ export default function DashboardPage() {
                 <span>➕</span>
                 <span>Add Project</span>
               </button>
-              <div className="flex items-center space-x-3 bg-white bg-opacity-80 px-4 py-2 rounded-full backdrop-blur-sm border border-blue-100">
+              <div className="flex items-center space-x-3 bg-white bg-opacity-80 px-4 py-2 rounded-lg backdrop-blur-sm border border-blue-100">
                 <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg" style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}>
                   👤
                 </div>
@@ -168,7 +168,7 @@ export default function DashboardPage() {
               </div>
               <button
                 onClick={handleLogout}
-                className="px-5 py-3 rounded-full text-white font-semibold flex items-center space-x-2 transition-all duration-300 hover:transform hover:-translate-y-1"
+                className="px-5 py-3 rounded-lg text-white font-semibold flex items-center space-x-2 transition-all duration-300 hover:transform hover:-translate-y-1"
                 style={{ 
                   background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
                   boxShadow: '0 4px 15px rgba(220, 53, 69, 0.3)'
@@ -184,7 +184,7 @@ export default function DashboardPage() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-8">
             {projects.length === 0 ? (
               <div className="col-span-full text-center py-20">
                 <div className="text-gray-400 text-6xl mb-4">📋</div>
@@ -205,7 +205,7 @@ export default function DashboardPage() {
               projects.map((project, index) => (
                 <div 
                   key={project.id} 
-                  className="bg-white bg-opacity-90 backdrop-blur-sm border-2 border-blue-100 rounded-2xl p-8 cursor-pointer transition-all duration-400 hover:transform hover:-translate-y-2 hover:scale-105 relative overflow-hidden group"
+                  className="bg-white bg-opacity-90 backdrop-blur-sm border-2 border-blue-100 rounded-2xl p-10 cursor-pointer transition-all duration-400 hover:transform hover:-translate-y-2 hover:scale-105 relative overflow-hidden group"
                   style={{ boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)' }}
                 >
                   {/* Top border effect */}
@@ -229,23 +229,7 @@ export default function DashboardPage() {
                     
                     <p className="text-gray-600 mb-6 leading-relaxed">{project.description || 'No description'}</p>
                     
-                    {/* Progress Bar */}
-                    <div className="mb-6">
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-semibold text-gray-700">Progress</span>
-                        <span className="text-sm font-bold" style={{ color: '#0b529e' }}>75%</span>
-                      </div>
-                      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full rounded-full transition-all duration-600"
-                          style={{ 
-                            width: '75%',
-                            background: 'linear-gradient(90deg, #ffc107 0%, #ffb300 100%)'
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                    
+                   
                     <div className="flex items-center justify-between">
                       <div className="flex items-center text-sm text-gray-500">
                         <span className="mr-2">👥</span>

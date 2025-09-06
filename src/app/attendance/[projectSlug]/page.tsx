@@ -378,7 +378,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <div className="flex justify-center gap-4 mb-8">
+          <div className="flex justify-end gap-4 mb-8">
             <button
               onClick={() => setShowAddContractor(true)}
               className="px-6 py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1"
@@ -447,7 +447,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                         {item.contractor.name}
                       </div>
                       
-                      <div className="text-center">
+                      <div className="flex justify-center">
                         <button
                           onClick={() => handleAttendanceChange(item.contractor.id, 'present')}
                           className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 hover:scale-105 ${
@@ -462,7 +462,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                         </button>
                       </div>
                       
-                      <div className="text-center">
+                      <div className="flex justify-center">
                         <button
                           onClick={() => handleAttendanceChange(item.contractor.id, 'absent')}
                           className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 hover:scale-105 ${
