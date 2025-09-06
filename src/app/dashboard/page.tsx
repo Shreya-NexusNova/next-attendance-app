@@ -230,14 +230,14 @@ export default function DashboardPage() {
                     <p className="text-gray-600 mb-6 leading-relaxed">{project.description || 'No description'}</p>
                     
                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center text-sm text-gray-500">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-center text-sm text-gray-500">
                         <span className="mr-2">👥</span>
                         <span className="font-semibold">{project.contractor_count} Contractors</span>
                       </div>
                       <Link
                         href={`/attendance/${project.slug}`}
-                        className="px-5 py-2 rounded-lg text-white font-semibold text-sm transition-all duration-300 hover:transform hover:-translate-y-1 flex items-center gap-2"
+                        className="w-full px-5 py-3 rounded-lg text-white font-semibold text-sm transition-all duration-300 hover:transform hover:-translate-y-1 flex items-center justify-center gap-2"
                         style={{ 
                           background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
                           boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
