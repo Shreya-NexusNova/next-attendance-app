@@ -29,6 +29,10 @@ export default function DashboardPage() {
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [newProject, setNewProject] = useState({ name: '', description: '' });
   const [editProject, setEditProject] = useState({ name: '', description: '', status: 'ongoing' });
+  const [showDeleteProjectModal, setShowDeleteProjectModal] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const router = useRouter();
 
   useEffect(() => {
@@ -116,23 +120,39 @@ export default function DashboardPage() {
   };
 
   const handleDeleteProject = async (projectId: number) => {
-    if (!confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-      return;
+    const project = projects.find(p => p.id === projectId);
+    if (project) {
+      setProjectToDelete(project);
+      setShowDeleteProjectModal(true);
     }
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!projectToDelete) return;
 
     try {
-      const response = await fetch(`/api/projects/${projectId}`, {
+      const response = await fetch(`/api/projects/${projectToDelete.id}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
+        setShowDeleteProjectModal(false);
+        setProjectToDelete(null);
+        setSuccessMessage('Project deleted successfully!');
+        setShowSuccessModal(true);
         fetchProjects();
       } else {
-        alert('Error deleting project');
+        setShowDeleteProjectModal(false);
+        setProjectToDelete(null);
+        setSuccessMessage('Error deleting project');
+        setShowSuccessModal(true);
       }
     } catch (error) {
       console.error('Error deleting project:', error);
-      alert('Error deleting project');
+      setShowDeleteProjectModal(false);
+      setProjectToDelete(null);
+      setSuccessMessage('Error deleting project');
+      setShowSuccessModal(true);
     }
   };
 
@@ -277,7 +297,7 @@ export default function DashboardPage() {
                         {index === 0 ? '🏥' : index === 1 ? '🏢' : '💻'}
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg sm:text-xl font-bold text-gray-800 mb-2 leading-tight">{project.name}</h3>
+                        <h3 className="text-sm sm:text-base font-bold text-gray-800 mb-2 leading-tight">{project.name}</h3>
                         <span className="inline-block px-3 py-1 sm:px-4 rounded-full text-xs font-bold text-white uppercase tracking-wide" style={{ background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' }}>
                           {project.status}
                         </span>
@@ -294,47 +314,50 @@ export default function DashboardPage() {
                       </div>
                       
                       {/* Action Buttons */}
-                      <div className="flex gap-2">
+                      <div className="flex items-center gap-3">
                         <Link
                           href={`/attendance/${project.slug}`}
-                          className="flex-1 px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-1 flex items-center justify-center gap-1"
+                          className="flex-1 px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-1 flex items-center justify-center"
                           style={{ 
                             background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
                             boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
                           }}
                         >
                           <span className="hidden sm:inline">Manage Attendance</span>
+                          <span className="sm:hidden">Manage</span>
                         </Link>
                         
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openEditModal(project);
-                          }}
-                          className="px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-1"
-                          style={{ 
-                            background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-                            boxShadow: '0 4px 15px rgba(40, 167, 69, 0.3)'
-                          }}
-                        >
-                          <span className="hidden sm:inline">✏️</span>
-                          <span className="sm:hidden">✏️</span>
-                        </button>
-                        
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteProject(project.id);
-                          }}
-                          className="px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-1"
-                          style={{ 
-                            background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                            boxShadow: '0 4px 15px rgba(220, 53, 69, 0.3)'
-                          }}
-                        >
-                          <span className="hidden sm:inline">🗑️</span>
-                          <span className="sm:hidden">🗑️</span>
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openEditModal(project);
+                            }}
+                            className="px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-1"
+                            style={{ 
+                              background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                              boxShadow: '0 4px 15px rgba(40, 167, 69, 0.3)'
+                            }}
+                          >
+                            <span className="hidden sm:inline">✏️</span>
+                            <span className="sm:hidden">✏️</span>
+                          </button>
+                          
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProject(project.id);
+                            }}
+                            className="px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-1"
+                            style={{ 
+                              background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                              boxShadow: '0 4px 15px rgba(220, 53, 69, 0.3)'
+                            }}
+                          >
+                            <span className="hidden sm:inline">🗑️</span>
+                            <span className="sm:hidden">🗑️</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -458,6 +481,69 @@ export default function DashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Project Confirmation Modal */}
+      {showDeleteProjectModal && projectToDelete && (
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0 w-10 h-10 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Delete Project</h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Are you sure you want to delete <strong>{projectToDelete.name}</strong>? This action cannot be undone.
+              </p>
+              <div className="flex justify-center space-x-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteProjectModal(false);
+                    setProjectToDelete(null);
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteProject}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success/Error Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="text-center">
+              <div className="flex-shrink-0 w-10 h-10 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {successMessage.includes('Error') ? 'Error' : 'Success'}
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">{successMessage}</p>
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                OK
+              </button>
+            </div>
           </div>
         </div>
       )}

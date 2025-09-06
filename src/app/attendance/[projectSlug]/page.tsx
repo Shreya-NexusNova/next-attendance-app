@@ -54,6 +54,10 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
   const [selectedContractor, setSelectedContractor] = useState<Contractor | null>(null);
   const [overtimeTimes, setOvertimeTimes] = useState({ startTime: '', endTime: '' });
   const [isSavingOvertime, setIsSavingOvertime] = useState(false);
+  const [showDeleteContractorModal, setShowDeleteContractorModal] = useState(false);
+  const [contractorToDelete, setContractorToDelete] = useState<Contractor | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
   const router = useRouter();
 
   // Resolve params
@@ -199,14 +203,17 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
       });
 
       if (response.ok) {
-        alert('Attendance saved successfully!');
+        setSuccessMessage('Attendance saved successfully!');
+        setShowSuccessModal(true);
         fetchAttendance();
       } else {
-        alert('Error saving attendance');
+        setSuccessMessage('Error saving attendance');
+        setShowSuccessModal(true);
       }
     } catch (error) {
       console.error('Error saving attendance:', error);
-      alert('Error saving attendance');
+      setSuccessMessage('Error saving attendance');
+      setShowSuccessModal(true);
     } finally {
       setIsSaving(false);
     }
@@ -256,23 +263,39 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
   };
 
   const handleDeleteContractor = async (contractorId: number) => {
-    if (!confirm('Are you sure you want to delete this contractor? This action cannot be undone.')) {
-      return;
+    const contractor = contractors.find(c => c.id === contractorId);
+    if (contractor) {
+      setContractorToDelete(contractor);
+      setShowDeleteContractorModal(true);
     }
+  };
+
+  const confirmDeleteContractor = async () => {
+    if (!contractorToDelete) return;
 
     try {
-      const response = await fetch(`/api/contractors/${contractorId}`, {
+      const response = await fetch(`/api/contractors/${contractorToDelete.id}`, {
         method: 'DELETE',
       });
 
       if (response.ok) {
+        setShowDeleteContractorModal(false);
+        setContractorToDelete(null);
+        setSuccessMessage('Contractor deleted successfully!');
+        setShowSuccessModal(true);
         fetchContractors();
       } else {
-        alert('Error deleting contractor');
+        setShowDeleteContractorModal(false);
+        setContractorToDelete(null);
+        setSuccessMessage('Error deleting contractor');
+        setShowSuccessModal(true);
       }
     } catch (error) {
       console.error('Error deleting contractor:', error);
-      alert('Error deleting contractor');
+      setShowDeleteContractorModal(false);
+      setContractorToDelete(null);
+      setSuccessMessage('Error deleting contractor');
+      setShowSuccessModal(true);
     }
   };
 
@@ -306,11 +329,13 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        alert('Error exporting attendance');
+        setSuccessMessage('Error exporting attendance');
+        setShowSuccessModal(true);
       }
     } catch (error) {
       console.error('Error exporting attendance:', error);
-      alert('Error exporting attendance');
+      setSuccessMessage('Error exporting attendance');
+      setShowSuccessModal(true);
     } finally {
       setIsExporting(false);
     }
@@ -510,35 +535,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                   <li key={item.contractor.id} className="px-3 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 transition-colors duration-200">
                     <div className="grid grid-cols-6 gap-2 sm:gap-4 items-center min-w-[700px]">
                       <div className="font-semibold text-gray-800 text-sm sm:text-base lg:text-lg">
-                        <div className="flex items-center justify-between">
-                          <span>{item.contractor.name}</span>
-                          <div className="flex gap-1 ml-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openEditContractorModal(item.contractor);
-                              }}
-                              className="p-1 rounded text-green-600 hover:bg-green-100 transition-colors"
-                              title="Edit contractor"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteContractor(item.contractor.id);
-                              }}
-                              className="p-1 rounded text-red-600 hover:bg-red-100 transition-colors"
-                              title="Delete contractor"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
+                        {item.contractor.name}
                       </div>
                       
                       <div className="flex justify-center">
@@ -589,6 +586,33 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                         <span className="inline-block px-2 py-1 sm:px-3 rounded-full text-xs sm:text-sm font-semibold bg-blue-100 text-blue-800">
                           {item.attendance?.overtime_hours || 0} hours
                         </span>
+                      </div>
+                      
+                      <div className="flex justify-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditContractorModal(item.contractor);
+                          }}
+                          className="p-2 rounded-lg text-green-600 hover:bg-green-100 transition-colors"
+                          title="Edit contractor"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteContractor(item.contractor.id);
+                          }}
+                          className="p-2 rounded-lg text-red-600 hover:bg-red-100 transition-colors"
+                          title="Delete contractor"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
                       </div>
                     </div>
                   </li>
@@ -792,6 +816,69 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Contractor Confirmation Modal */}
+      {showDeleteContractorModal && contractorToDelete && (
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex items-center mb-4">
+              <div className="flex-shrink-0 w-10 h-10 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 18.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Delete Contractor</h3>
+              <p className="text-sm text-gray-500 mb-6">
+                Are you sure you want to delete <strong>{contractorToDelete.name}</strong>? This action cannot be undone.
+              </p>
+              <div className="flex justify-center space-x-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteContractorModal(false);
+                    setContractorToDelete(null);
+                  }}
+                  className="px-4 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDeleteContractor}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success/Error Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="text-center">
+              <div className="flex-shrink-0 w-10 h-10 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {successMessage.includes('Error') ? 'Error' : 'Success'}
+              </h3>
+              <p className="text-sm text-gray-500 mb-6">{successMessage}</p>
+              <button
+                onClick={() => setShowSuccessModal(false)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                OK
+              </button>
+            </div>
           </div>
         </div>
       )}
