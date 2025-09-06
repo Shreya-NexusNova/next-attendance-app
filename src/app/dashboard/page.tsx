@@ -127,38 +127,55 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen relative" style={{ background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)' }}>
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="relative z-10" style={{ 
+        background: 'rgba(255, 255, 255, 0.95)', 
+        backdropFilter: 'blur(20px)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+        borderBottom: '1px solid rgba(0, 86, 179, 0.1)'
+      }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="flex items-center">
-                <img 
-                  src="/background-image.webp" 
-                  alt="Nexus Nova Logo" 
-                  className="w-80 h-80 mr-3 object-contain"
-                />
-              </div>
+          <div className="flex justify-between items-center py-5">
+            <div className="flex items-center space-x-5">
+              <img 
+                src="/background-image.webp" 
+                alt="Nexus Nova Logo" 
+                className="h-24 w-auto object-contain"
+              />
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-medium text-gray-600">👤</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{user?.email}</p>
-                    <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
-                  </div>
+            <div className="flex items-center space-x-5">
+              <button
+                onClick={() => setShowAddProject(true)}
+                className="px-5 py-3 rounded-full text-white font-semibold flex items-center space-x-2 transition-all duration-300 hover:transform hover:-translate-y-1"
+                style={{ 
+                  background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
+                  boxShadow: '0 4px 15px rgba(0, 86, 179, 0.3)'
+                }}
+              >
+                <span>➕</span>
+                <span>Add Project</span>
+              </button>
+              <div className="flex items-center space-x-3 bg-white bg-opacity-80 px-4 py-2 rounded-full backdrop-blur-sm border border-blue-100">
+                <div className="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg" style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}>
+                  👤
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-800">{user?.email}</p>
+                  <p className="text-xs text-gray-500 font-medium capitalize">{user?.role}</p>
                 </div>
               </div>
               <button
                 onClick={handleLogout}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="px-5 py-3 rounded-full text-white font-semibold flex items-center space-x-2 transition-all duration-300 hover:transform hover:-translate-y-1"
+                style={{ 
+                  background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                  boxShadow: '0 4px 15px rgba(220, 53, 69, 0.3)'
+                }}
               >
-                Logout
+                <span>🚪</span>
+                <span>Logout</span>
               </button>
             </div>
           </div>
@@ -166,71 +183,96 @@ export default function DashboardPage() {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">Projects</h2>
-          <button
-            onClick={() => setShowAddProject(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Add Project
-          </button>
-        </div>
-
-        {/* Projects Grid */}
-        {projects.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">📋</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No projects yet</h3>
-            <p className="text-gray-500 mb-4">Get started by creating your first project.</p>
-            <button
-              onClick={() => setShowAddProject(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-            >
-              Create Project
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {projects.map((project, index) => (
-              <div key={project.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <img 
-                      src={getProjectIcon(index)} 
-                      alt={`Project ${index + 1} icon`}
-                      className="w-6 h-6"
-                    />
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(project.status)}`}>
-                    {project.status.toUpperCase()}
-                  </span>
-                </div>
-                
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{project.name}</h3>
-                <p className="text-gray-600 text-sm mb-4">{project.description || 'No description'}</p>
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center text-sm text-gray-500">
-                    <span className="mr-1">👥</span>
-                    {project.contractor_count} Contractors
-                  </div>
-                  <Link
-                    href={`/attendance/${project.slug}`}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  >
-                    Manage Attendance
-                  </Link>
-                </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {projects.length === 0 ? (
+              <div className="col-span-full text-center py-20">
+                <div className="text-gray-400 text-6xl mb-4">📋</div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">No projects yet</h3>
+                <p className="text-gray-500 mb-8">Get started by creating your first project.</p>
+                <button
+                  onClick={() => setShowAddProject(true)}
+                  className="px-6 py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1"
+                  style={{ 
+                    background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
+                    boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
+                  }}
+                >
+                  Create Project
+                </button>
               </div>
-            ))}
+            ) : (
+              projects.map((project, index) => (
+                <div 
+                  key={project.id} 
+                  className="bg-white bg-opacity-90 backdrop-blur-sm border-2 border-blue-100 rounded-2xl p-8 cursor-pointer transition-all duration-400 hover:transform hover:-translate-y-2 hover:scale-105 relative overflow-hidden group"
+                  style={{ boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)' }}
+                >
+                  {/* Top border effect */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-blue-800 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-400"></div>
+                  
+                  {/* Background overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400"></div>
+                  
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl" style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}>
+                        {index === 0 ? '🏥' : index === 1 ? '🏢' : '💻'}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-800 mb-2 leading-tight">{project.name}</h3>
+                        <span className="inline-block px-4 py-1 rounded-full text-xs font-bold text-white uppercase tracking-wide" style={{ background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' }}>
+                          {project.status}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <p className="text-gray-600 mb-6 leading-relaxed">{project.description || 'No description'}</p>
+                    
+                    {/* Progress Bar */}
+                    <div className="mb-6">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm font-semibold text-gray-700">Progress</span>
+                        <span className="text-sm font-bold" style={{ color: '#0b529e' }}>75%</span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full rounded-full transition-all duration-600"
+                          style={{ 
+                            width: '75%',
+                            background: 'linear-gradient(90deg, #ffc107 0%, #ffb300 100%)'
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <span className="mr-2">👥</span>
+                        <span className="font-semibold">{project.contractor_count} Contractors</span>
+                      </div>
+                      <Link
+                        href={`/attendance/${project.slug}`}
+                        className="px-5 py-2 rounded-lg text-white font-semibold text-sm transition-all duration-300 hover:transform hover:-translate-y-1 flex items-center gap-2"
+                        style={{ 
+                          background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
+                          boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
+                        }}
+                      >
+                        <span>📋</span>
+                        <span>Manage Attendance</span>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
-        )}
       </main>
 
       {/* Add Project Modal */}
       {showAddProject && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">Add New Project</h3>
             <form onSubmit={handleAddProject}>
@@ -267,7 +309,8 @@ export default function DashboardPage() {
                 </button>
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                  className="px-4 py-2 rounded-md text-white font-semibold"
+                  style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}
                 >
                   Create Project
                 </button>

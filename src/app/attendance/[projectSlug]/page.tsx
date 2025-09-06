@@ -18,7 +18,7 @@ interface AttendanceRecord {
   date: string;
   status: 'present' | 'absent';
   overtime_hours: number;
-  work_time: string;
+  work_time: string | null;
   overtime_start_time?: string;
   overtime_end_time?: string;
 }
@@ -334,35 +334,40 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background: '#f8f9fa' }}>
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header className="bg-white shadow-lg sticky top-0 z-50" style={{ boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
+          <div className="flex justify-between items-center py-5">
+            <div className="flex items-center space-x-5">
               <Link
                 href="/dashboard"
-                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                className="px-4 py-2 rounded-md text-sm font-medium text-white transition-all duration-300 hover:transform hover:-translate-y-1"
+                style={{ background: '#6c757d' }}
               >
                 ← Back to Dashboard
               </Link>
-              <h1 className="text-xl font-semibold text-gray-900">
+              <h1 className="text-2xl font-bold text-gray-800">
                 {project?.name || 'Loading...'}
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">Date:</span>
+            <div className="flex items-center space-x-5">
+              <div className="flex items-center space-x-3">
+                <span className="text-sm font-semibold text-gray-700">Date:</span>
                 <input
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                  className="px-3 py-2 border-2 border-gray-200 rounded-md text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                 />
               </div>
               <button
                 onClick={() => router.push('/api/auth/logout')}
-                className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                className="px-4 py-2 rounded-md text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1"
+                style={{ 
+                  background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                  boxShadow: '0 4px 15px rgba(220, 53, 69, 0.3)'
+                }}
               >
                 Logout
               </button>
@@ -372,111 +377,135 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex space-x-4">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="flex justify-center gap-4 mb-8">
             <button
               onClick={() => setShowAddContractor(true)}
-              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+              className="px-6 py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1"
+              style={{ 
+                background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
+                boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
+              }}
             >
               Add Contractor
             </button>
             <button
               onClick={() => setShowExportModal(true)}
-              className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700"
+              className="px-6 py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1"
+              style={{ 
+                background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
+                boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
+              }}
             >
               Export to Excel
             </button>
-          </div>
-          <button
-            onClick={saveAttendance}
-            disabled={isSaving}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
-          >
-            {isSaving ? 'Saving...' : 'Save Attendance'}
-          </button>
-        </div>
-
-        {contractors.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">👥</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No contractors yet</h3>
-            <p className="text-gray-500 mb-4">Add contractors to start managing attendance.</p>
             <button
-              onClick={() => setShowAddContractor(true)}
-              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+              onClick={saveAttendance}
+              disabled={isSaving}
+              className="px-6 py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ 
+                background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
+                boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
+              }}
             >
-              Add Contractor
+              {isSaving ? 'Saving...' : 'Save Attendance'}
             </button>
           </div>
-        ) : (
-          <div className="bg-white shadow overflow-hidden sm:rounded-md">
-            <div className="bg-blue-600 text-white px-6 py-3">
-              <div className="grid grid-cols-5 gap-4 text-sm font-medium">
-                <div>CONTRACTOR NAME</div>
-                <div className="text-center">PRESENT</div>
-                <div className="text-center">ABSENT</div>
-                <div className="text-center">OVERTIME HOURS</div>
-                <div className="text-right">TOTAL OVERTIME HOURS WORKED</div>
-              </div>
+
+          {contractors.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="text-gray-400 text-6xl mb-4">👥</div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">No contractors yet</h3>
+              <p className="text-gray-500 mb-8">Add contractors to start managing attendance.</p>
+              <button
+                onClick={() => setShowAddContractor(true)}
+                className="px-6 py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1"
+                style={{ 
+                  background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
+                  boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
+                }}
+              >
+                Add Contractor
+              </button>
             </div>
-            <ul className="divide-y divide-gray-200">
-              {attendanceData.map((item) => (
-                <li key={item.contractor.id} className="px-6 py-4">
-                  <div className="grid grid-cols-5 gap-4 items-center">
-                    <div className="font-medium text-gray-900">
-                      {item.contractor.name}
+          ) : (
+            <div className="overflow-hidden rounded-xl" style={{ boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}>
+              <div className="px-6 py-4 text-white text-sm font-semibold uppercase tracking-wide" style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}>
+                <div className="grid grid-cols-5 gap-4">
+                  <div>CONTRACTOR NAME</div>
+                  <div className="text-center">PRESENT</div>
+                  <div className="text-center">ABSENT</div>
+                  <div className="text-center">OVERTIME HOURS</div>
+                  <div className="text-right">TOTAL OVERTIME HOURS WORKED</div>
+                </div>
+              </div>
+              <ul className="divide-y divide-gray-100">
+                {attendanceData.map((item) => (
+                  <li key={item.contractor.id} className="px-6 py-4 hover:bg-gray-50 transition-colors duration-200">
+                    <div className="grid grid-cols-5 gap-4 items-center">
+                      <div className="font-semibold text-gray-800 text-lg">
+                        {item.contractor.name}
+                      </div>
+                      
+                      <div className="text-center">
+                        <button
+                          onClick={() => handleAttendanceChange(item.contractor.id, 'present')}
+                          className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 hover:scale-105 ${
+                            item.attendance?.status === 'present' 
+                              ? 'bg-green-500 border-green-500 text-white shadow-lg' 
+                              : 'bg-white border-gray-300 text-gray-400 hover:border-green-500'
+                          }`}
+                        >
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      <div className="text-center">
+                        <button
+                          onClick={() => handleAttendanceChange(item.contractor.id, 'absent')}
+                          className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 hover:scale-105 ${
+                            item.attendance?.status === 'absent' 
+                              ? 'bg-red-500 border-red-500 text-white shadow-lg' 
+                              : 'bg-white border-gray-300 text-gray-400 hover:border-red-500'
+                          }`}
+                        >
+                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      <div className="text-center">
+                        <button
+                          onClick={() => openOvertimeModal(item.contractor)}
+                          className="px-4 py-2 rounded-lg text-white font-semibold text-sm transition-all duration-300 hover:transform hover:-translate-y-1"
+                          style={{ 
+                            background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
+                            boxShadow: '0 4px 15px rgba(0, 86, 179, 0.3)'
+                          }}
+                        >
+                          Select Work Time
+                        </button>
+                      </div>
+                      
+                      <div className="text-right">
+                        <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
+                          {item.attendance?.overtime_hours || 0} hours
+                        </span>
+                      </div>
                     </div>
-                    
-                    <div className="text-center">
-                      <button
-                        onClick={() => handleAttendanceChange(item.contractor.id, 'present')}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          item.attendance?.status === 'present' 
-                            ? 'bg-green-500 text-white' 
-                            : 'bg-gray-200 text-gray-400'
-                        }`}
-                      >
-                        ✓
-                      </button>
-                    </div>
-                    
-                    <div className="text-center">
-                      <button
-                        onClick={() => handleAttendanceChange(item.contractor.id, 'absent')}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          item.attendance?.status === 'absent' 
-                            ? 'bg-red-500 text-white' 
-                            : 'bg-gray-200 text-gray-400'
-                        }`}
-                      >
-                        ✗
-                      </button>
-                    </div>
-                    
-                    <div className="text-center">
-                      <button
-                        onClick={() => openOvertimeModal(item.contractor)}
-                        className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      >
-                        Select Work Time
-                      </button>
-                    </div>
-                    
-                    <div className="text-right text-sm text-gray-600">
-                      {item.attendance?.overtime_hours || 0} hours
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
       </main>
 
       {/* Add Contractor Modal */}
       {showAddContractor && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">Add New Contractor</h3>
             <form onSubmit={addContractor}>
@@ -524,7 +553,8 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                 </button>
                 <button
                   type="submit"
-                  className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+                  className="px-4 py-2 rounded-md text-white font-semibold"
+                  style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}
                 >
                   Add Contractor
                 </button>
@@ -536,7 +566,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
 
       {/* Export Modal */}
       {showExportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">Export Attendance</h3>
             <div className="space-y-4">
@@ -574,7 +604,8 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
               <button
                 onClick={exportAttendance}
                 disabled={isExporting}
-                className="bg-purple-600 text-white px-4 py-2 rounded-md hover:bg-purple-700 disabled:opacity-50"
+                className="px-4 py-2 rounded-md text-white font-semibold disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}
               >
                 {isExporting ? 'Exporting...' : 'Export'}
               </button>
@@ -585,7 +616,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
 
       {/* Overtime Modal */}
       {showOvertimeModal && selectedContractor && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold mb-4">
               Select Work Time for {selectedContractor.name}
@@ -644,7 +675,8 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
               <button
                 onClick={saveOvertime}
                 disabled={isSavingOvertime}
-                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
+                className="px-4 py-2 rounded-md text-white font-semibold disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}
               >
                 {isSavingOvertime ? 'Saving...' : 'Save'}
               </button>

@@ -39,14 +39,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-blue-900 flex items-center justify-center relative">
+    <div className="min-h-screen flex items-center justify-center relative" style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}>
       {/* Background Image */}
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-10"
           style={{ backgroundImage: 'url(/background-image.webp)' }}
         ></div>
       
-      <div className="bg-white shadow-lg p-8 w-full max-w-md relative z-10">
+      <div className="bg-white shadow-lg rounded-lg p-8 w-full max-w-md relative z-10">
         {/* Logo and Branding */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
@@ -97,7 +97,8 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full text-white py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}
           >
             {isLoading ? 'Signing In...' : 'Sign In'}
           </button>
