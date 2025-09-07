@@ -1,10 +1,11 @@
 import mysql from 'mysql2/promise';
 
 const dbConfig = {
-  host: 'localhost',
-  user: 'root',
-  password: '', // Add your MySQL password here if you have one
-  database: 'attendance_app',
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'attendance_app',
+  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -19,14 +20,16 @@ export default pool;
 export async function initializeDatabase() {
   try {
     const connection = await mysql.createConnection({
-      host: 'localhost',
-      user: 'root',
-      password: '', // Add your MySQL password here if you have one
+      host: process.env.DB_HOST || 'localhost',
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
     });
 
     // Create database if it doesn't exist
-    await connection.query('CREATE DATABASE IF NOT EXISTS attendance_app');
-    await connection.query('USE attendance_app');
+    const dbName = process.env.DB_NAME || 'attendance_app';
+    await connection.query(`CREATE DATABASE IF NOT EXISTS ${dbName}`);
+    await connection.query(`USE ${dbName}`);
 
     // Create tables
     await connection.query(`
