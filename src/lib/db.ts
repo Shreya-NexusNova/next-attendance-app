@@ -1,4 +1,4 @@
-import { MongoClient, Db } from 'mongodb';
+import { MongoClient, Db, MongoClientOptions } from 'mongodb';
 
 let client: MongoClient;
 let db: Db;
@@ -14,6 +14,9 @@ const getMongoURI = () => {
     uri.searchParams.set('retryWrites', 'true');
     uri.searchParams.set('w', 'majority');
     uri.searchParams.set('ssl', 'true');
+    uri.searchParams.set('tls', 'true');
+    uri.searchParams.set('tlsAllowInvalidCertificates', 'false');
+    uri.searchParams.set('tlsAllowInvalidHostnames', 'false');
     return uri.toString();
   }
   return MONGODB_URI;
@@ -26,32 +29,107 @@ export async function connectToDatabase(): Promise<{ db: Db; client: MongoClient
 
   // Configure MongoDB client options for Vercel serverless environment
   const clientOptions = {
-    serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
+    serverSelectionTimeoutMS: 10000, // Keep trying to send operations for 10 seconds
     socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-    maxPoolSize: 10, // Maintain up to 10 socket connections
-    minPoolSize: 5, // Maintain a minimum of 5 socket connections
-    maxIdleTimeMS: 30000, // Close connections after 30 seconds of inactivity
-    connectTimeoutMS: 10000, // Give up initial connection after 10 seconds
-    tls: true, // Enable TLS/SSL
-    tlsAllowInvalidCertificates: false, // Don't allow invalid certificates
-    tlsAllowInvalidHostnames: false, // Don't allow invalid hostnames
+    maxPoolSize: 1, // Use single connection for serverless
+    minPoolSize: 0, // No minimum connections for serverless
+    maxIdleTimeMS: 10000, // Close connections after 10 seconds of inactivity
+    connectTimeoutMS: 15000, // Give up initial connection after 15 seconds
+    heartbeatFrequencyMS: 10000, // Send a ping every 10 seconds
+    // SSL/TLS configuration
+    tls: true,
+    tlsAllowInvalidCertificates: false,
+    tlsAllowInvalidHostnames: false,
+    // Additional options for Vercel compatibility
+    directConnection: false,
+    retryWrites: true,
+    retryReads: true,
+    // Compression
+    compressors: ['zlib'],
+    zlibCompressionLevel: 6,
   };
 
-  // Retry connection logic for serverless environments
-  const maxRetries = 3;
+  // Try different connection configurations for Vercel compatibility
+  const connectionConfigs: Array<{ name: string; options: MongoClientOptions; uri: string }> = [
+    // Configuration 1: Vercel-optimized connection
+    {
+      name: 'Vercel Optimized',
+      options: {
+        serverSelectionTimeoutMS: 15000,
+        socketTimeoutMS: 30000,
+        connectTimeoutMS: 20000,
+        maxPoolSize: 1,
+        minPoolSize: 0,
+        maxIdleTimeMS: 10000,
+        heartbeatFrequencyMS: 10000,
+        tls: true,
+        tlsAllowInvalidCertificates: false,
+        tlsAllowInvalidHostnames: false,
+        retryWrites: true,
+        retryReads: true,
+        directConnection: false,
+      },
+      uri: getMongoURI()
+    },
+    // Configuration 2: Minimal TLS connection
+    {
+      name: 'Minimal TLS',
+      options: {
+        serverSelectionTimeoutMS: 20000,
+        connectTimeoutMS: 25000,
+        maxPoolSize: 1,
+        minPoolSize: 0,
+        tls: true,
+        retryWrites: true,
+        retryReads: true,
+      },
+      uri: getMongoURI()
+    },
+    // Configuration 3: No compression (sometimes helps with SSL issues)
+    {
+      name: 'No Compression',
+      options: {
+        serverSelectionTimeoutMS: 20000,
+        connectTimeoutMS: 25000,
+        maxPoolSize: 1,
+        minPoolSize: 0,
+        tls: true,
+        retryWrites: true,
+        retryReads: true,
+        compressors: [],
+      },
+      uri: getMongoURI()
+    },
+    // Configuration 4: Direct connection (fallback)
+    {
+      name: 'Direct Connection',
+      options: {
+        serverSelectionTimeoutMS: 25000,
+        connectTimeoutMS: 30000,
+        maxPoolSize: 1,
+        minPoolSize: 0,
+        tls: true,
+        retryWrites: true,
+        retryReads: true,
+        directConnection: true,
+      },
+      uri: getMongoURI()
+    }
+  ];
+
   let lastError;
 
-  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+  for (const config of connectionConfigs) {
     try {
-      console.log(`MongoDB connection attempt ${attempt}/${maxRetries}`);
-      client = new MongoClient(getMongoURI(), clientOptions);
+      console.log(`Trying MongoDB connection with ${config.name} configuration...`);
+      client = new MongoClient(config.uri, config.options);
       await client.connect();
       db = client.db(MONGODB_DB);
-      console.log('Connected to MongoDB successfully');
+      console.log(`Connected to MongoDB successfully using ${config.name} configuration`);
       return { db, client };
     } catch (error) {
       lastError = error;
-      console.error(`MongoDB connection attempt ${attempt} failed:`, error);
+      console.error(`${config.name} configuration failed:`, error);
       
       if (client) {
         try {
@@ -62,16 +140,12 @@ export async function connectToDatabase(): Promise<{ db: Db; client: MongoClient
         client = null as unknown as MongoClient;
       }
       
-      if (attempt < maxRetries) {
-        // Wait before retrying (exponential backoff)
-        const delay = Math.pow(2, attempt) * 1000;
-        console.log(`Retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
+      // Wait before trying next configuration
+      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
 
-  console.error('All MongoDB connection attempts failed');
+  console.error('All MongoDB connection configurations failed');
   throw lastError;
 }
 
