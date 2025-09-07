@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
+import { promisify } from 'util';
+import * as dns from 'dns';
 
 export async function GET() {
   const baseHost = 'db5018571845.hosting-data.io';
@@ -20,8 +22,6 @@ export async function GET() {
       console.log(`Testing: ${host}`);
       
       // Test DNS resolution first
-      const dns = require('dns');
-      const { promisify } = require('util');
       const lookup = promisify(dns.lookup);
       
       const dnsResult = await lookup(host);
