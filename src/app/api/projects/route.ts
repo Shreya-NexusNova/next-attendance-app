@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { getDatabase } from '@/lib/db';
 import { verifyTokenEdge } from '@/lib/auth-edge';
 import { generateSlug } from '@/lib/slug';
-import { Project, DatabaseResult } from '@/types/database';
+import { Project } from '@/types/database';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,11 +16,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
-    const [rows] = await pool.execute(
-      'SELECT p.*, COUNT(c.id) as contractor_count FROM projects p LEFT JOIN contractors c ON p.id = c.project_id GROUP BY p.id ORDER BY p.created_at DESC'
-    );
+    const db = await getDatabase();
+    
+    // Get projects with contractor count using aggregation
+    const projects = await db.collection('projects').aggregate([
+      {
+        $lookup: {
+          from: 'contractors',
+          localField: '_id',
+          foreignField: 'project_id',
+          as: 'contractors'
+        }
+      },
+      {
+        $addFields: {
+          contractor_count: { $size: '$contractors' }
+        }
+      },
+      {
+        $project: {
+          contractors: 0 // Remove contractors array from output
+        }
+      },
+      {
+        $sort: { created_at: -1 }
+      }
+    ]).toArray();
 
-    return NextResponse.json({ projects: rows });
+    return NextResponse.json({ projects });
   } catch (error) {
     console.error('Error fetching projects:', error);
     return NextResponse.json(
@@ -51,18 +74,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const db = await getDatabase();
+
     // Generate slug from project name
     let slug = generateSlug(name);
     
     // Ensure slug is unique
     let counter = 1;
     while (true) {
-      const [existing] = await pool.execute(
-        'SELECT id FROM projects WHERE slug = ?',
-        [slug]
-      );
+      const existing = await db.collection('projects').findOne({ slug });
       
-      if ((existing as { id: number }[]).length === 0) {
+      if (!existing) {
         break;
       }
       
@@ -70,22 +92,22 @@ export async function POST(request: NextRequest) {
       counter++;
     }
 
-    const [result] = await pool.execute(
-      'INSERT INTO projects (name, slug, description, status) VALUES (?, ?, ?, ?)',
-      [name, slug, description, status]
-    );
+    const projectData = {
+      name,
+      slug,
+      description,
+      status,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
 
-    const insertResult = result as DatabaseResult;
-    const projectId = insertResult.insertId;
+    const result = await db.collection('projects').insertOne(projectData);
 
     // Fetch the created project
-    const [rows] = await pool.execute(
-      'SELECT * FROM projects WHERE id = ?',
-      [projectId]
-    );
+    const project = await db.collection('projects').findOne({ _id: result.insertedId }) as unknown as Project;
 
     return NextResponse.json(
-      { message: 'Project created successfully', project: (rows as Project[])[0] },
+      { message: 'Project created successfully', project },
       { status: 201 }
     );
   } catch (error) {

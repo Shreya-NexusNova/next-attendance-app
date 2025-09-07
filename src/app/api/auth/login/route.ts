@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { getDatabase } from '@/lib/db';
 import { verifyPassword } from '@/lib/auth';
 import { generateTokenEdge } from '@/lib/auth-edge';
 import { User } from '@/types/database';
@@ -15,21 +15,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find user in database
-    const [rows] = await pool.execute(
-      'SELECT id, email, password, role FROM users WHERE email = ?',
-      [email]
-    );
+    // Get database connection
+    const db = await getDatabase();
 
-    const users = rows as User[];
-    if (users.length === 0) {
+    // Find user in database
+    const user = await db.collection('users').findOne({ email }) as User | null;
+    
+    if (!user) {
       return NextResponse.json(
         { error: 'Invalid credentials' },
         { status: 401 }
       );
     }
-
-    const user = users[0];
 
     // Verify password
     const isValidPassword = await verifyPassword(password, user.password);
@@ -42,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     // Generate JWT token
     const token = await generateTokenEdge({
-      id: user.id,
+      id: user._id!.toString(),
       email: user.email,
       role: user.role
     });
@@ -51,7 +48,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       message: 'Login successful',
       user: {
-        id: user.id,
+        id: user._id!.toString(),
         email: user.email,
         role: user.role
       }

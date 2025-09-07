@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { getDatabase } from '@/lib/db';
 import { verifyTokenEdge } from '@/lib/auth-edge';
-import { Contractor, DatabaseResult } from '@/types/database';
+import { Contractor } from '@/types/database';
 
 export async function GET(
   request: NextRequest,
@@ -20,12 +20,14 @@ export async function GET(
 
     const { id: projectId } = await params;
 
-    const [rows] = await pool.execute(
-      'SELECT * FROM contractors WHERE project_id = ? ORDER BY name',
-      [projectId]
-    );
+    const db = await getDatabase();
 
-    return NextResponse.json({ contractors: rows });
+    const contractors = await db.collection('contractors')
+      .find({ project_id: projectId })
+      .sort({ name: 1 })
+      .toArray();
+
+    return NextResponse.json({ contractors });
   } catch (error) {
     console.error('Error fetching contractors:', error);
     return NextResponse.json(
@@ -60,22 +62,23 @@ export async function POST(
       );
     }
 
-    const [result] = await pool.execute(
-      'INSERT INTO contractors (project_id, name, email, phone) VALUES (?, ?, ?, ?)',
-      [projectId, name, email, phone]
-    );
+    const db = await getDatabase();
 
-    const insertResult = result as DatabaseResult;
-    const contractorId = insertResult.insertId;
+    const contractorData = {
+      project_id: projectId,
+      name,
+      email,
+      phone,
+      created_at: new Date()
+    };
+
+    const result = await db.collection('contractors').insertOne(contractorData);
 
     // Fetch the created contractor
-    const [rows] = await pool.execute(
-      'SELECT * FROM contractors WHERE id = ?',
-      [contractorId]
-    );
+    const contractor = await db.collection('contractors').findOne({ _id: result.insertedId }) as unknown as Contractor;
 
     return NextResponse.json(
-      { message: 'Contractor added successfully', contractor: (rows as Contractor[])[0] },
+      { message: 'Contractor added successfully', contractor },
       { status: 201 }
     );
   } catch (error) {

@@ -1,54 +1,49 @@
 import { NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { getDatabase } from '@/lib/db';
 
-interface TableInfo {
+interface CollectionInfo {
   [key: string]: {
-    columns: unknown[];
-    rowCount: number;
+    indexes: unknown[];
+    documentCount: number;
   };
-}
-
-interface DatabaseInfo {
-  current_db: string;
 }
 
 export async function GET() {
   try {
-    console.log('🔍 Checking database status...');
+    console.log('🔍 Checking MongoDB database status...');
     
     // Test basic connection
-    const connection = await pool.getConnection();
+    const db = await getDatabase();
     
-    // Get database info
-    const [dbInfo] = await connection.query('SELECT DATABASE() as current_db');
+    // Get database name
+    const dbName = db.databaseName;
     
-    // Get list of tables
-    const [tables] = await connection.query('SHOW TABLES');
-    const tableNames = (tables as Record<string, unknown>[]).map(table => Object.values(table)[0] as string);
+    // Get list of collections
+    const collections = await db.listCollections().toArray();
+    const collectionNames = collections.map(col => col.name);
     
-    // Get table details
-    const tableDetails: TableInfo = {};
-    for (const tableName of tableNames) {
-      const [columns] = await connection.query(`DESCRIBE ${tableName}`);
-      const [count] = await connection.query(`SELECT COUNT(*) as count FROM ${tableName}`);
-      tableDetails[tableName] = {
-        columns: columns as unknown[],
-        rowCount: (count as { count: number }[])[0].count
+    // Get collection details
+    const collectionDetails: CollectionInfo = {};
+    for (const collectionName of collectionNames) {
+      const collection = db.collection(collectionName);
+      const indexes = await collection.indexes();
+      const documentCount = await collection.countDocuments();
+      
+      collectionDetails[collectionName] = {
+        indexes: indexes,
+        documentCount: documentCount
       };
     }
     
-    connection.release();
-    
     return NextResponse.json({
       status: 'connected',
-      database: (dbInfo as DatabaseInfo[])[0].current_db,
-      tables: tableNames,
-      tableDetails: tableDetails,
+      database: dbName,
+      collections: collectionNames,
+      collectionDetails: collectionDetails,
       timestamp: new Date().toISOString(),
       environment: {
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        database: process.env.DB_NAME
+        uri: process.env.MONGODB_URI ? 'Set' : 'Missing',
+        database: process.env.MONGODB_DB || 'attendance_app'
       }
     });
     

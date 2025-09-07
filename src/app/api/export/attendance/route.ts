@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { getDatabase } from '@/lib/db';
 import { verifyTokenEdge } from '@/lib/auth-edge';
 import * as XLSX from 'xlsx';
 import { Project, Contractor, AttendanceRecord } from '@/types/database';
+import { ObjectId } from 'mongodb';
 
 export async function GET(request: NextRequest) {
   try {
@@ -28,37 +29,54 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get project details
-    const [projectRows] = await pool.execute(
-      'SELECT * FROM projects WHERE id = ?',
-      [projectId]
-    );
+    const db = await getDatabase();
 
-    const projects = projectRows as Project[];
-    if (projects.length === 0) {
+    // Get project details
+    const project = await db.collection('projects').findOne({ _id: new ObjectId(projectId) }) as unknown as Project;
+    
+    if (!project) {
       return NextResponse.json(
         { error: 'Project not found' },
         { status: 404 }
       );
     }
 
-    const project = projects[0];
-
     // Get contractors for the project
-    const [contractors] = await pool.execute(
-      'SELECT * FROM contractors WHERE project_id = ? ORDER BY name',
-      [projectId]
-    );
+    const contractors = await db.collection('contractors')
+      .find({ project_id: projectId })
+      .sort({ name: 1 })
+      .toArray() as unknown as Contractor[];
 
     // Get attendance records for the date range
-    const [attendance] = await pool.execute(
-      `SELECT a.*, c.name as contractor_name 
-       FROM attendance a 
-       JOIN contractors c ON a.contractor_id = c.id 
-       WHERE a.project_id = ? AND a.date BETWEEN ? AND ?
-       ORDER BY a.date, c.name`,
-      [projectId, startDate, endDate]
-    );
+    const attendance = await db.collection('attendance')
+      .aggregate([
+        {
+          $match: {
+            project_id: projectId,
+            date: { $gte: startDate, $lte: endDate }
+          }
+        },
+        {
+          $lookup: {
+            from: 'contractors',
+            localField: 'contractor_id',
+            foreignField: '_id',
+            as: 'contractor'
+          }
+        },
+        {
+          $unwind: '$contractor'
+        },
+        {
+          $addFields: {
+            contractor_name: '$contractor.name'
+          }
+        },
+        {
+          $sort: { date: 1, 'contractor.name': 1 }
+        }
+      ])
+      .toArray() as unknown as AttendanceRecord[];
 
     // Generate date range
     const start = new Date(startDate);
@@ -72,7 +90,7 @@ export async function GET(request: NextRequest) {
     const attendanceMatrix = (contractors as Contractor[]).map(contractor => {
       // Get attendance records for this contractor
       const contractorAttendanceRecords = (attendance as AttendanceRecord[]).filter(
-        record => record.contractor_id === contractor.id
+        record => record.contractor_id.toString() === contractor._id?.toString()
       );
 
       // Calculate totals
@@ -144,7 +162,7 @@ export async function GET(request: NextRequest) {
 
     (contractors as Contractor[]).forEach(contractor => {
       const contractorAttendanceRecords = (attendance as AttendanceRecord[]).filter(
-        record => record.contractor_id === contractor.id
+        record => record.contractor_id.toString() === contractor._id?.toString()
       );
 
       const presentDays = contractorAttendanceRecords.filter(

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { getDatabase } from '@/lib/db';
 import { verifyTokenEdge } from '@/lib/auth-edge';
 import { Contractor } from '@/types/database';
+import { ObjectId } from 'mongodb';
 
 export async function PUT(
   request: NextRequest,
@@ -28,20 +29,26 @@ export async function PUT(
       );
     }
 
-    await pool.execute(
-      'UPDATE contractors SET name = ?, email = ?, phone = ? WHERE id = ?',
-      [name, email, phone, contractorId]
+    const db = await getDatabase();
+
+    await db.collection('contractors').updateOne(
+      { _id: new ObjectId(contractorId) },
+      { 
+        $set: { 
+          name, 
+          email, 
+          phone,
+          updated_at: new Date()
+        } 
+      }
     );
 
     // Fetch updated contractor
-    const [rows] = await pool.execute(
-      'SELECT * FROM contractors WHERE id = ?',
-      [contractorId]
-    );
+    const contractor = await db.collection('contractors').findOne({ _id: new ObjectId(contractorId) }) as unknown as Contractor;
 
     return NextResponse.json({
       message: 'Contractor updated successfully',
-      contractor: (rows as Contractor[])[0]
+      contractor
     });
   } catch (error) {
     console.error('Error updating contractor:', error);
@@ -69,7 +76,9 @@ export async function DELETE(
 
     const { id: contractorId } = await params;
 
-    await pool.execute('DELETE FROM contractors WHERE id = ?', [contractorId]);
+    const db = await getDatabase();
+
+    await db.collection('contractors').deleteOne({ _id: new ObjectId(contractorId) });
 
     return NextResponse.json({
       message: 'Contractor deleted successfully'

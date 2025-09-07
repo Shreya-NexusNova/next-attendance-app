@@ -5,16 +5,16 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface Contractor {
-  id: number;
+  _id: string;
   name: string;
   email: string;
   phone: string;
 }
 
 interface AttendanceRecord {
-  id: number;
-  contractor_id: number;
-  project_id: number;
+  _id?: string;
+  contractor_id: string;
+  project_id: string;
   date: string;
   status: 'present' | 'absent';
   overtime_hours: number;
@@ -29,7 +29,7 @@ interface AttendanceData {
 }
 
 interface Project {
-  id: number;
+  _id: string;
   name: string;
   slug: string;
   description: string;
@@ -105,8 +105,8 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
     if (!project) return;
     
     try {
-      console.log('Fetching contractors for project:', project.id);
-      const response = await fetch(`/api/projects/${project.id}/contractors`);
+      console.log('Fetching contractors for project:', project._id);
+      const response = await fetch(`/api/projects/${project._id}/contractors`);
       if (response.ok) {
         const data = await response.json();
         console.log('Contractors fetched successfully:', data.contractors);
@@ -124,7 +124,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
     if (!project) return;
     
     try {
-      const response = await fetch(`/api/attendance?projectId=${project.id}&date=${selectedDate}`);
+      const response = await fetch(`/api/attendance?projectId=${project._id}&date=${selectedDate}`);
       if (response.ok) {
         const data = await response.json();
         setAttendanceData(data.attendance);
@@ -134,21 +134,21 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
     }
   };
 
-  const handleAttendanceChange = (contractorId: number, status: 'present' | 'absent') => {
+  const handleAttendanceChange = (contractorId: string, status: 'present' | 'absent') => {
     setAttendanceData(prev => 
       prev.map(item => {
-        if (item.contractor.id === contractorId) {
+        if (item.contractor._id === contractorId) {
           return {
             ...item,
             attendance: {
               ...item.attendance,
               contractor_id: contractorId,
-              project_id: project?.id || 0,
+              project_id: project?._id || '',
               date: selectedDate,
               status: status,
               overtime_hours: item.attendance?.overtime_hours || 0,
               work_time: item.attendance?.work_time || null,
-              id: item.attendance?.id || 0
+              _id: item.attendance?._id || ''
             }
           };
         }
@@ -164,7 +164,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
     setIsSaving(true);
     try {
       const attendanceRecords = attendanceData.map(item => ({
-        contractorId: item.contractor.id,
+        contractorId: item.contractor._id,
         status: item.attendance?.status || 'absent',
         overtimeHours: item.attendance?.overtime_hours || 0,
         workTime: item.attendance?.work_time || null
@@ -174,7 +174,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          projectId: project.id,
+          projectId: project._id,
           date: selectedDate,
           attendanceRecords
         }),
@@ -202,7 +202,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
     
     e.preventDefault();
     try {
-      const response = await fetch(`/api/projects/${project.id}/contractors`, {
+      const response = await fetch(`/api/projects/${project._id}/contractors`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newContractor),
@@ -223,7 +223,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
     if (!editingContractor) return;
 
     try {
-      const response = await fetch(`/api/contractors/${editingContractor.id}`, {
+      const response = await fetch(`/api/contractors/${editingContractor._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editContractor),
@@ -240,8 +240,8 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
     }
   };
 
-  const handleDeleteContractor = async (contractorId: number) => {
-    const contractor = contractors.find(c => c.id === contractorId);
+  const handleDeleteContractor = async (contractorId: string) => {
+    const contractor = contractors.find(c => c._id === contractorId);
     if (contractor) {
       setContractorToDelete(contractor);
       setShowDeleteContractorModal(true);
@@ -252,7 +252,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
     if (!contractorToDelete) return;
 
     try {
-      const response = await fetch(`/api/contractors/${contractorToDelete.id}`, {
+      const response = await fetch(`/api/contractors/${contractorToDelete._id}`, {
         method: 'DELETE',
       });
 
@@ -293,7 +293,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
     setIsExporting(true);
     try {
       const response = await fetch(
-        `/api/export/attendance?projectId=${project.id}&startDate=${selectedDate}&endDate=${selectedDate}`
+        `/api/export/attendance?projectId=${project._id}&startDate=${selectedDate}&endDate=${selectedDate}`
       );
 
       if (response.ok) {
@@ -323,7 +323,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
   const openOvertimeModal = (contractor: Contractor) => {
     setSelectedContractor(contractor);
     // Get existing overtime times if available
-    const attendanceRecord = attendanceData.find(item => item.contractor.id === contractor.id)?.attendance;
+    const attendanceRecord = attendanceData.find(item => item.contractor._id === contractor._id)?.attendance;
     setOvertimeTimes({
       startTime: attendanceRecord?.overtime_start_time || '',
       endTime: attendanceRecord?.overtime_end_time || ''
@@ -343,8 +343,8 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contractorId: selectedContractor.id,
-          projectId: project.id,
+          contractorId: selectedContractor._id,
+          projectId: project._id,
           date: selectedDate,
           startTime: overtimeTimes.startTime,
           endTime: overtimeTimes.endTime
@@ -505,7 +505,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
               <div className="overflow-x-auto">
               <ul className="divide-y divide-gray-100">
                 {attendanceData.map((item) => (
-                  <li key={item.contractor.id} className="px-3 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 transition-colors duration-200">
+                  <li key={item.contractor._id} className="px-3 sm:px-6 py-3 sm:py-4 hover:bg-gray-50 transition-colors duration-200">
                     <div className="grid grid-cols-6 gap-2 sm:gap-4 items-center min-w-[700px]">
                       <div className="font-semibold text-gray-800 text-sm sm:text-base lg:text-lg">
                         {item.contractor.name}
@@ -513,7 +513,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                       
                       <div className="flex justify-center">
                         <button
-                          onClick={() => handleAttendanceChange(item.contractor.id, 'present')}
+                          onClick={() => handleAttendanceChange(item.contractor._id, 'present')}
                           className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 hover:scale-105 ${
                             item.attendance?.status === 'present' 
                               ? 'bg-green-500 border-green-500 text-white shadow-lg' 
@@ -528,7 +528,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                       
                       <div className="flex justify-center">
                         <button
-                          onClick={() => handleAttendanceChange(item.contractor.id, 'absent')}
+                          onClick={() => handleAttendanceChange(item.contractor._id, 'absent')}
                           className={`w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 hover:scale-105 ${
                             item.attendance?.status === 'absent' 
                               ? 'bg-red-500 border-red-500 text-white shadow-lg' 
@@ -577,7 +577,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteContractor(item.contractor.id);
+                            handleDeleteContractor(item.contractor._id);
                           }}
                           className="p-2 rounded-lg text-red-600 hover:bg-red-100 transition-colors"
                           title="Delete contractor"

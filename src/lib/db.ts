@@ -1,108 +1,102 @@
-import mysql from 'mysql2/promise';
+import { MongoClient, Db } from 'mongodb';
 
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'attendance_app',
-  port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
+let client: MongoClient;
+let db: Db;
+
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+const MONGODB_DB = process.env.MONGODB_DB || 'attendance_app';
+
+export async function connectToDatabase(): Promise<{ db: Db; client: MongoClient }> {
+  if (db && client) {
+    return { db, client };
+  }
+
+  try {
+    client = new MongoClient(MONGODB_URI);
+    await client.connect();
+    db = client.db(MONGODB_DB);
+    console.log('Connected to MongoDB');
+    return { db, client };
+  } catch (error) {
+    console.error('MongoDB connection error:', error);
+    throw error;
+  }
+}
+
+export async function getDatabase(): Promise<Db> {
+  if (!db) {
+    const { db: database } = await connectToDatabase();
+    return database;
+  }
+  return db;
+}
+
+export async function getClient(): Promise<MongoClient> {
+  if (!client) {
+    const { client: mongoClient } = await connectToDatabase();
+    return mongoClient;
+  }
+  return client;
+}
+
+// Default export for backward compatibility
+export default {
+  getDatabase,
+  getClient,
+  connectToDatabase
 };
-
-// Create connection pool
-const pool = mysql.createPool(dbConfig);
-
-export default pool;
 
 // Database initialization function
 export async function initializeDatabase() {
   try {
-    const connection = await mysql.createConnection({
-      host: process.env.DB_HOST || 'localhost',
-      user: process.env.DB_USER || 'root',
-      password: process.env.DB_PASSWORD || '',
-      port: process.env.DB_PORT ? parseInt(process.env.DB_PORT) : 3306,
-    });
+    const { db: database } = await connectToDatabase();
+    
+    // Create collections with validation (optional)
+    const collections = ['users', 'projects', 'contractors', 'attendance'];
+    
+    for (const collectionName of collections) {
+      try {
+        await database.createCollection(collectionName);
+        console.log(`Collection ${collectionName} created or already exists`);
+      } catch (error) {
+        // Collection might already exist, which is fine
+        console.log(`Collection ${collectionName} already exists`);
+      }
+    }
 
-    // Create database if it doesn't exist
-    const dbName = process.env.DB_NAME || 'attendance_app';
-    await connection.query(`CREATE DATABASE IF NOT EXISTS ${dbName}`);
-    await connection.query(`USE ${dbName}`);
-
-    // Create tables
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        role ENUM('admin', 'manager') DEFAULT 'manager',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS projects (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        description TEXT,
-        status ENUM('ongoing', 'completed', 'paused') DEFAULT 'ongoing',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-      )
-    `);
-
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS contractors (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        project_id INT NOT NULL,
-        name VARCHAR(255) NOT NULL,
-        email VARCHAR(255),
-        phone VARCHAR(20),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
-      )
-    `);
-
-    await connection.query(`
-      CREATE TABLE IF NOT EXISTS attendance (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        contractor_id INT NOT NULL,
-        project_id INT NOT NULL,
-        date DATE NOT NULL,
-        status ENUM('present', 'absent') NOT NULL,
-        overtime_hours DECIMAL(4,2) DEFAULT 0,
-        work_time VARCHAR(50),
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (contractor_id) REFERENCES contractors(id) ON DELETE CASCADE,
-        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
-        UNIQUE KEY unique_attendance (contractor_id, date)
-      )
-    `);
+    // Create indexes for better performance
+    await database.collection('users').createIndex({ email: 1 }, { unique: true });
+    await database.collection('attendance').createIndex({ contractor_id: 1, date: 1 }, { unique: true });
+    await database.collection('contractors').createIndex({ project_id: 1 });
+    await database.collection('attendance').createIndex({ project_id: 1 });
 
     // Insert default admin user if not exists
-    const [existingAdmin] = await connection.query(
-      'SELECT id FROM users WHERE email = ?',
-      ['admin@gmail.com']
-    );
-
-    if (!Array.isArray(existingAdmin) || existingAdmin.length === 0) {
+    const existingAdmin = await database.collection('users').findOne({ email: 'admin@gmail.com' });
+    
+    if (!existingAdmin) {
       const bcrypt = await import('bcryptjs');
       const hashedPassword = await bcrypt.hash('admin123', 10);
       
-      await connection.query(
-        'INSERT INTO users (email, password, role) VALUES (?, ?, ?)',
-        ['admin@gmail.com', hashedPassword, 'admin']
-      );
+      await database.collection('users').insertOne({
+        email: 'admin@gmail.com',
+        password: hashedPassword,
+        role: 'admin',
+        created_at: new Date()
+      });
       console.log('Default admin user created: admin@gmail.com / admin123');
     }
 
-    await connection.end();
     console.log('Database initialized successfully');
   } catch (error) {
     console.error('Database initialization error:', error);
     throw error;
+  }
+}
+
+// Close connection (useful for cleanup)
+export async function closeConnection() {
+  if (client) {
+    await client.close();
+    console.log('MongoDB connection closed');
   }
 }

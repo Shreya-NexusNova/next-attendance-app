@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { User } from '@/types/database';
 
 export interface TokenUser {
-  id: number;
+  id: string;
   email: string;
   role: string;
 }
@@ -21,7 +21,7 @@ export async function verifyPassword(password: string, hashedPassword: string): 
 export function generateToken(user: User): string {
   return jwt.sign(
     { 
-      id: user.id, 
+      id: user._id, 
       email: user.email, 
       role: user.role 
     },
@@ -32,7 +32,7 @@ export function generateToken(user: User): string {
 
 export function verifyToken(token: string): TokenUser | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string; role: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: string; email: string; role: string };
     return {
       id: decoded.id,
       email: decoded.email,

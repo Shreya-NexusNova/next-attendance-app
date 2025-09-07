@@ -1,47 +1,48 @@
 export interface Project {
-  id: number;
+  _id?: string;
   name: string;
   slug: string;
   description: string;
   status: string;
-  created_at: string;
-  updated_at?: string;
+  created_at: Date;
+  updated_at?: Date;
 }
 
 export interface Contractor {
-  id: number;
-  project_id: number;
+  _id?: string;
+  project_id: string;
   name: string;
   email: string;
   phone: string;
-  created_at: string;
+  created_at: Date;
 }
 
 export interface AttendanceRecord {
-  id: number;
-  contractor_id: number;
-  project_id: number;
+  _id?: string;
+  contractor_id: string;
+  project_id: string;
   date: string;
   status: string;
   overtime_hours: number;
   work_time: string | null;
   overtime_start_time: string | null;
   overtime_end_time: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at: Date;
+  updated_at: Date;
   contractor_name?: string;
 }
 
 export interface User {
-  id: number;
+  _id?: string;
   email: string;
   password: string;
   role: 'admin' | 'manager' | string;
-  created_at: string;
+  created_at: Date;
 }
 
 export interface DatabaseResult {
-  insertId?: number;
-  affectedRows?: number;
-  changedRows?: number;
+  insertedId?: string;
+  modifiedCount?: number;
+  matchedCount?: number;
+  acknowledged?: boolean;
 }

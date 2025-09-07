@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { getDatabase } from '@/lib/db';
 import { verifyTokenEdge } from '@/lib/auth-edge';
 import { Project } from '@/types/database';
+import { ObjectId } from 'mongodb';
 
 export async function GET(
   request: NextRequest,
@@ -20,14 +21,12 @@ export async function GET(
 
     const { id: projectId } = await params;
 
-    // Get project details
-    const [projectRows] = await pool.execute(
-      'SELECT * FROM projects WHERE id = ?',
-      [projectId]
-    );
+    const db = await getDatabase();
 
-    const projects = projectRows as Project[];
-    if (projects.length === 0) {
+    // Get project details
+    const project = await db.collection('projects').findOne({ _id: new ObjectId(projectId) }) as unknown as Project;
+    
+    if (!project) {
       return NextResponse.json(
         { error: 'Project not found' },
         { status: 404 }
@@ -35,14 +34,14 @@ export async function GET(
     }
 
     // Get contractors for this project
-    const [contractorRows] = await pool.execute(
-      'SELECT * FROM contractors WHERE project_id = ? ORDER BY name',
-      [projectId]
-    );
+    const contractors = await db.collection('contractors')
+      .find({ project_id: projectId })
+      .sort({ name: 1 })
+      .toArray();
 
     return NextResponse.json({
-      project: projects[0],
-      contractors: contractorRows
+      project,
+      contractors
     });
   } catch (error) {
     console.error('Error fetching project:', error);
@@ -78,20 +77,26 @@ export async function PUT(
       );
     }
 
-    await pool.execute(
-      'UPDATE projects SET name = ?, description = ?, status = ? WHERE id = ?',
-      [name, description, status, projectId]
+    const db = await getDatabase();
+
+    await db.collection('projects').updateOne(
+      { _id: new ObjectId(projectId) },
+      { 
+        $set: { 
+          name, 
+          description, 
+          status,
+          updated_at: new Date()
+        } 
+      }
     );
 
     // Fetch updated project
-    const [rows] = await pool.execute(
-      'SELECT * FROM projects WHERE id = ?',
-      [projectId]
-    );
+    const project = await db.collection('projects').findOne({ _id: new ObjectId(projectId) }) as unknown as Project;
 
     return NextResponse.json({
       message: 'Project updated successfully',
-      project: (rows as Project[])[0]
+      project
     });
   } catch (error) {
     console.error('Error updating project:', error);
@@ -119,7 +124,9 @@ export async function DELETE(
 
     const { id: projectId } = await params;
 
-    await pool.execute('DELETE FROM projects WHERE id = ?', [projectId]);
+    const db = await getDatabase();
+
+    await db.collection('projects').deleteOne({ _id: new ObjectId(projectId) });
 
     return NextResponse.json({
       message: 'Project deleted successfully'

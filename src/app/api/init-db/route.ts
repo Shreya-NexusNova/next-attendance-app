@@ -3,22 +3,19 @@ import { initializeDatabase } from '@/lib/db';
 
 export async function GET() {
   try {
-    console.log('🚀 Starting database initialization...');
+    console.log('🚀 Starting MongoDB database initialization...');
     console.log('Environment check:');
-    console.log('- DB_HOST:', process.env.DB_HOST ? '✅ Set' : '❌ Missing');
-    console.log('- DB_USER:', process.env.DB_USER ? '✅ Set' : '❌ Missing');
-    console.log('- DB_NAME:', process.env.DB_NAME ? '✅ Set' : '❌ Missing');
-    console.log('- DB_PASSWORD:', process.env.DB_PASSWORD ? '✅ Set' : '❌ Missing');
+    console.log('- MONGODB_URI:', process.env.MONGODB_URI ? '✅ Set' : '❌ Missing');
+    console.log('- MONGODB_DB:', process.env.MONGODB_DB ? '✅ Set' : '❌ Missing');
     
     await initializeDatabase();
     
     return NextResponse.json({ 
-      message: 'Database initialized successfully',
+      message: 'MongoDB database initialized successfully',
       timestamp: new Date().toISOString(),
       environment: {
-        host: process.env.DB_HOST,
-        database: process.env.DB_NAME,
-        user: process.env.DB_USER
+        uri: process.env.MONGODB_URI ? 'Set' : 'Missing',
+        database: process.env.MONGODB_DB || 'attendance_app'
       }
     });
   } catch (error) {

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { getDatabase, getClient } from '@/lib/db';
 import { verifyTokenEdge } from '@/lib/auth-edge';
 import { Contractor, AttendanceRecord } from '@/types/database';
+import { ObjectId } from 'mongodb';
 
 export async function GET(request: NextRequest) {
   try {
@@ -26,31 +27,52 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const db = await getDatabase();
+
     // Get contractors for the project
-    const [contractors] = await pool.execute(
-      'SELECT * FROM contractors WHERE project_id = ? ORDER BY name',
-      [projectId]
-    );
+    const contractors = await db.collection('contractors')
+      .find({ project_id: projectId })
+      .sort({ name: 1 })
+      .toArray() as unknown as Contractor[];
 
     // Get attendance records for the date
-    const [attendance] = await pool.execute(
-      `SELECT a.*, c.name as contractor_name 
-       FROM attendance a 
-       JOIN contractors c ON a.contractor_id = c.id 
-       WHERE a.project_id = ? AND a.date = ?`,
-      [projectId, date]
-    );
+    const attendance = await db.collection('attendance')
+      .aggregate([
+        {
+          $match: {
+            project_id: projectId,
+            date: date
+          }
+        },
+        {
+          $lookup: {
+            from: 'contractors',
+            localField: 'contractor_id',
+            foreignField: '_id',
+            as: 'contractor'
+          }
+        },
+        {
+          $unwind: '$contractor'
+        },
+        {
+          $addFields: {
+            contractor_name: '$contractor.name'
+          }
+        }
+      ])
+      .toArray() as unknown as AttendanceRecord[];
 
     // Create a map of attendance records by contractor_id
     const attendanceMap = new Map();
-    (attendance as AttendanceRecord[]).forEach(record => {
-      attendanceMap.set(record.contractor_id, record);
+    attendance.forEach(record => {
+      attendanceMap.set(record.contractor_id.toString(), record);
     });
 
     // Combine contractors with their attendance records
-    const result = (contractors as Contractor[]).map(contractor => ({
+    const result = contractors.map(contractor => ({
       contractor,
-      attendance: attendanceMap.get(contractor.id) || null
+      attendance: attendanceMap.get(contractor._id?.toString()) || null
     }));
 
     return NextResponse.json({ attendance: result });
@@ -84,42 +106,47 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Start transaction
-    const connection = await pool.getConnection();
-    await connection.beginTransaction();
+    const db = await getDatabase();
+    const client = await getClient();
+
+    // Start a session for transaction
+    const session = client.startSession();
 
     try {
-      // Delete existing attendance records for this date and project
-      await connection.execute(
-        'DELETE FROM attendance WHERE project_id = ? AND date = ?',
-        [projectId, date]
-      );
+      await session.withTransaction(async () => {
+        // Delete existing attendance records for this date and project
+        await db.collection('attendance').deleteMany(
+          { project_id: projectId, date: date },
+          { session }
+        );
 
-      // Insert new attendance records
-      for (const record of attendanceRecords) {
-        if (record.contractorId && record.status) {
-          await connection.execute(
-            `INSERT INTO attendance (contractor_id, project_id, date, status, overtime_hours, work_time) 
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [
-              record.contractorId,
-              projectId,
-              date,
-              record.status,
-              record.overtimeHours || 0,
-              record.workTime || null
-            ]
-          );
+        // Insert new attendance records
+        const recordsToInsert = [];
+        for (const record of attendanceRecords) {
+          if (record.contractorId && record.status) {
+            recordsToInsert.push({
+              contractor_id: new ObjectId(record.contractorId),
+              project_id: projectId,
+              date: date,
+              status: record.status,
+              overtime_hours: record.overtimeHours || 0,
+              work_time: record.workTime || null,
+              created_at: new Date(),
+              updated_at: new Date()
+            });
+          }
         }
-      }
 
-      await connection.commit();
+        if (recordsToInsert.length > 0) {
+          await db.collection('attendance').insertMany(recordsToInsert, { session });
+        }
+      });
+
       return NextResponse.json({ message: 'Attendance saved successfully' });
     } catch (error) {
-      await connection.rollback();
       throw error;
     } finally {
-      connection.release();
+      await session.endSession();
     }
   } catch (error) {
     console.error('Error saving attendance:', error);

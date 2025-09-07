@@ -3,7 +3,7 @@ import { SignJWT, jwtVerify } from 'jose';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 export interface TokenUser {
-  id: number;
+  id: string;
   email: string;
   role: string;
 }
@@ -30,7 +30,7 @@ export async function verifyTokenEdge(token: string): Promise<TokenUser | null> 
     const { payload } = await jwtVerify(token, secret);
     
     return {
-      id: payload.id as number,
+      id: payload.id as string,
       email: payload.email as string,
       role: payload.role as string
     };

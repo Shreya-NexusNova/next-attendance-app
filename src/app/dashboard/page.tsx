@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 interface Project {
-  id: number;
+  _id: string;
   name: string;
   slug: string;
   description: string;
@@ -15,7 +15,7 @@ interface Project {
 }
 
 interface User {
-  id: number;
+  _id: string;
   email: string;
   role: string;
 }
@@ -102,7 +102,7 @@ export default function DashboardPage() {
     if (!editingProject) return;
     
     try {
-      const response = await fetch(`/api/projects/${editingProject.id}`, {
+      const response = await fetch(`/api/projects/${editingProject._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editProject),
@@ -119,8 +119,8 @@ export default function DashboardPage() {
     }
   };
 
-  const handleDeleteProject = async (projectId: number) => {
-    const project = projects.find(p => p.id === projectId);
+  const handleDeleteProject = async (projectId: string) => {
+    const project = projects.find(p => p._id === projectId);
     if (project) {
       setProjectToDelete(project);
       setShowDeleteProjectModal(true);
@@ -131,7 +131,7 @@ export default function DashboardPage() {
     if (!projectToDelete) return;
 
     try {
-      const response = await fetch(`/api/projects/${projectToDelete.id}`, {
+      const response = await fetch(`/api/projects/${projectToDelete._id}`, {
         method: 'DELETE',
       });
 
@@ -257,7 +257,7 @@ export default function DashboardPage() {
             ) : (
               projects.map((project, index) => (
                 <div 
-                  key={project.id} 
+                  key={project._id} 
                   className="bg-white bg-opacity-90 backdrop-blur-sm border-2 border-blue-100 rounded-xl sm:rounded-2xl p-6 sm:p-8 lg:p-10 cursor-pointer transition-all duration-400 hover:transform hover:-translate-y-2 hover:scale-105 relative overflow-hidden group"
                   style={{ boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)' }}
                 >
@@ -322,7 +322,7 @@ export default function DashboardPage() {
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleDeleteProject(project.id);
+                              handleDeleteProject(project._id);
                             }}
                             className="px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-white font-semibold text-xs sm:text-sm transition-all duration-300 hover:transform hover:-translate-y-1"
                             style={{ 

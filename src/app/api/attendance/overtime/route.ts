@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
-import { verifyToken } from '@/lib/auth';
-import { DatabaseResult } from '@/types/database';
+import { getDatabase } from '@/lib/db';
+import { verifyTokenEdge } from '@/lib/auth-edge';
+import { ObjectId } from 'mongodb';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -11,8 +11,8 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const decoded = await verifyToken(token);
-    if (!decoded) {
+    const user = await verifyTokenEdge(token);
+    if (!user) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
 
@@ -34,15 +34,26 @@ export async function PUT(request: NextRequest) {
     const diffMs = end.getTime() - start.getTime();
     const overtimeHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100; // Round to 2 decimal places
 
+    const db = await getDatabase();
+
     // Update attendance record with overtime times and calculated hours
-    const [result] = await pool.execute(
-      `UPDATE attendance 
-       SET overtime_start_time = ?, overtime_end_time = ?, overtime_hours = ?
-       WHERE contractor_id = ? AND project_id = ? AND date = ?`,
-      [startTime, endTime, overtimeHours, contractorId, projectId, date]
+    const result = await db.collection('attendance').updateOne(
+      { 
+        contractor_id: new ObjectId(contractorId), 
+        project_id: projectId, 
+        date: date 
+      },
+      { 
+        $set: { 
+          overtime_start_time: startTime, 
+          overtime_end_time: endTime, 
+          overtime_hours: overtimeHours,
+          updated_at: new Date()
+        } 
+      }
     );
 
-    if ((result as DatabaseResult).affectedRows === 0) {
+    if (result.matchedCount === 0) {
       return NextResponse.json({ error: 'Attendance record not found' }, { status: 404 });
     }
 

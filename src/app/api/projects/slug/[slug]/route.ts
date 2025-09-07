@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import pool from '@/lib/db';
+import { getDatabase } from '@/lib/db';
 import { verifyTokenEdge } from '@/lib/auth-edge';
 import { Project } from '@/types/database';
 
@@ -20,21 +20,17 @@ export async function GET(
 
     const { slug } = await params;
 
-    // Get project details by slug
-    const [projectRows] = await pool.execute(
-      'SELECT * FROM projects WHERE slug = ?',
-      [slug]
-    );
+    const db = await getDatabase();
 
-    const projects = projectRows as Project[];
-    if (projects.length === 0) {
+    // Get project details by slug
+    const project = await db.collection('projects').findOne({ slug }) as unknown as Project;
+    
+    if (!project) {
       return NextResponse.json(
         { error: 'Project not found' },
         { status: 404 }
       );
     }
-
-    const project = projects[0];
 
     return NextResponse.json({ project });
   } catch (error) {
