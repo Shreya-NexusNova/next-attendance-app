@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { DatabaseResult } from '@/types/database';
 
 export async function PUT(request: NextRequest) {
   try {
@@ -41,7 +42,7 @@ export async function PUT(request: NextRequest) {
       [startTime, endTime, overtimeHours, contractorId, projectId, date]
     );
 
-    if ((result as any).affectedRows === 0) {
+    if ((result as DatabaseResult).affectedRows === 0) {
       return NextResponse.json({ error: 'Attendance record not found' }, { status: 404 });
     }
 

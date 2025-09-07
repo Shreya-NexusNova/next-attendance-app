@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyTokenEdge } from '@/lib/auth-edge';
+import { Contractor, DatabaseResult } from '@/types/database';
 
 export async function GET(
   request: NextRequest,
@@ -64,7 +65,7 @@ export async function POST(
       [projectId, name, email, phone]
     );
 
-    const insertResult = result as any;
+    const insertResult = result as DatabaseResult;
     const contractorId = insertResult.insertId;
 
     // Fetch the created contractor
@@ -74,7 +75,7 @@ export async function POST(
     );
 
     return NextResponse.json(
-      { message: 'Contractor added successfully', contractor: (rows as any[])[0] },
+      { message: 'Contractor added successfully', contractor: (rows as Contractor[])[0] },
       { status: 201 }
     );
   } catch (error) {

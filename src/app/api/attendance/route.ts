@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyTokenEdge } from '@/lib/auth-edge';
+import { Contractor, AttendanceRecord } from '@/types/database';
 
 export async function GET(request: NextRequest) {
   try {
@@ -42,12 +43,12 @@ export async function GET(request: NextRequest) {
 
     // Create a map of attendance records by contractor_id
     const attendanceMap = new Map();
-    (attendance as any[]).forEach(record => {
+    (attendance as AttendanceRecord[]).forEach(record => {
       attendanceMap.set(record.contractor_id, record);
     });
 
     // Combine contractors with their attendance records
-    const result = (contractors as any[]).map(contractor => ({
+    const result = (contractors as Contractor[]).map(contractor => ({
       contractor,
       attendance: attendanceMap.get(contractor.id) || null
     }));

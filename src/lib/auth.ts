@@ -1,13 +1,14 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
+import { User } from '@/types/database';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-
-export interface User {
+export interface TokenUser {
   id: number;
   email: string;
-  role: 'admin' | 'manager';
+  role: string;
 }
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
@@ -29,15 +30,15 @@ export function generateToken(user: User): string {
   );
 }
 
-export function verifyToken(token: string): User | null {
+export function verifyToken(token: string): TokenUser | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const decoded = jwt.verify(token, JWT_SECRET) as { id: number; email: string; role: string };
     return {
       id: decoded.id,
       email: decoded.email,
       role: decoded.role
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 }

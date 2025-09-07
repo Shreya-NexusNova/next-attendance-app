@@ -157,28 +157,6 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
     );
   };
 
-  const handleWorkTimeChange = (contractorId: number, workTime: string) => {
-    setAttendanceData(prev => 
-      prev.map(item => {
-        if (item.contractor.id === contractorId) {
-          return {
-            ...item,
-            attendance: {
-              ...item.attendance,
-              contractor_id: contractorId,
-              project_id: project?.id || 0,
-              date: selectedDate,
-              status: item.attendance?.status || 'present',
-              overtime_hours: item.attendance?.overtime_hours || 0,
-              work_time: workTime,
-              id: item.attendance?.id || 0
-            }
-          };
-        }
-        return item;
-      })
-    );
-  };
 
   const saveAttendance = async () => {
     if (!project) return;
@@ -341,14 +319,6 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
-  };
 
   const openOvertimeModal = (contractor: Contractor) => {
     setSelectedContractor(contractor);

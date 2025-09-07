@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyTokenEdge } from '@/lib/auth-edge';
+import { Project } from '@/types/database';
 
 export async function GET(
   request: NextRequest,
@@ -25,7 +26,7 @@ export async function GET(
       [slug]
     );
 
-    const projects = projectRows as any[];
+    const projects = projectRows as Project[];
     if (projects.length === 0) {
       return NextResponse.json(
         { error: 'Project not found' },

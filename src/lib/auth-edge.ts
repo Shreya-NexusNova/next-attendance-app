@@ -2,13 +2,13 @@ import { SignJWT, jwtVerify } from 'jose';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
-export interface User {
+export interface TokenUser {
   id: number;
   email: string;
-  role: 'admin' | 'manager';
+  role: string;
 }
 
-export async function generateTokenEdge(user: User): Promise<string> {
+export async function generateTokenEdge(user: TokenUser): Promise<string> {
   const secret = new TextEncoder().encode(JWT_SECRET);
   
   const token = await new SignJWT({
@@ -24,7 +24,7 @@ export async function generateTokenEdge(user: User): Promise<string> {
   return token;
 }
 
-export async function verifyTokenEdge(token: string): Promise<User | null> {
+export async function verifyTokenEdge(token: string): Promise<TokenUser | null> {
   try {
     const secret = new TextEncoder().encode(JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
@@ -32,7 +32,7 @@ export async function verifyTokenEdge(token: string): Promise<User | null> {
     return {
       id: payload.id as number,
       email: payload.email as string,
-      role: payload.role as 'admin' | 'manager'
+      role: payload.role as string
     };
   } catch (error) {
     console.log('Token verification failed:', error instanceof Error ? error.message : 'Unknown error');

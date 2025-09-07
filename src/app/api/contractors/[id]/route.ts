@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyTokenEdge } from '@/lib/auth-edge';
+import { Contractor } from '@/types/database';
 
 export async function PUT(
   request: NextRequest,
@@ -40,7 +41,7 @@ export async function PUT(
 
     return NextResponse.json({
       message: 'Contractor updated successfully',
-      contractor: (rows as any[])[0]
+      contractor: (rows as Contractor[])[0]
     });
   } catch (error) {
     console.error('Error updating contractor:', error);

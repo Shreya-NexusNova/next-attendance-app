@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyTokenEdge } from '@/lib/auth-edge';
 import * as XLSX from 'xlsx';
+import { Project, Contractor, AttendanceRecord } from '@/types/database';
 
 export async function GET(request: NextRequest) {
   try {
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
       [projectId]
     );
 
-    const projects = projectRows as any[];
+    const projects = projectRows as Project[];
     if (projects.length === 0) {
       return NextResponse.json(
         { error: 'Project not found' },
@@ -68,9 +69,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Create attendance matrix with requested data
-    const attendanceMatrix = (contractors as any[]).map(contractor => {
+    const attendanceMatrix = (contractors as Contractor[]).map(contractor => {
       // Get attendance records for this contractor
-      const contractorAttendanceRecords = (attendance as any[]).filter(
+      const contractorAttendanceRecords = (attendance as AttendanceRecord[]).filter(
         record => record.contractor_id === contractor.id
       );
 
@@ -111,7 +112,7 @@ export async function GET(request: NextRequest) {
     const attendanceMatrixWithDate = [
       ['Project Name', project.name],
       ['Export Date', startDate],
-      ['Total Contractors', (contractors as any[]).length],
+      ['Total Contractors', (contractors as Contractor[]).length],
       ['', ''], // Empty row for spacing
       ['Name', 'Email', 'Phone', 'Present or Absent', 'Total Overtime Hours', 'Overtime Start Time', 'Overtime End Time'], // Header row
       ...attendanceMatrix.map(item => [
@@ -134,15 +135,15 @@ export async function GET(request: NextRequest) {
       ['Project Name', project.name],
       ['Project Description', project.description || ''],
       ['Export Date', startDate], // Use the selected date instead of range
-      ['Total Contractors', (contractors as any[]).length],
+      ['Total Contractors', (contractors as Contractor[]).length],
       ['Export Generated', new Date().toISOString().split('T')[0]],
       ['', ''],
       ['Contractor Summary', ''],
       ['Name', 'Email', 'Phone', 'Present or Absent', 'Total Overtime Hours', 'Overtime Start Time', 'Overtime End Time']
     ];
 
-    (contractors as any[]).forEach(contractor => {
-      const contractorAttendanceRecords = (attendance as any[]).filter(
+    (contractors as Contractor[]).forEach(contractor => {
+      const contractorAttendanceRecords = (attendance as AttendanceRecord[]).filter(
         record => record.contractor_id === contractor.id
       );
 

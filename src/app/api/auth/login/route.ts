@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyPassword } from '@/lib/auth';
 import { generateTokenEdge } from '@/lib/auth-edge';
+import { User } from '@/types/database';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
       [email]
     );
 
-    const users = rows as any[];
+    const users = rows as User[];
     if (users.length === 0) {
       return NextResponse.json(
         { error: 'Invalid credentials' },

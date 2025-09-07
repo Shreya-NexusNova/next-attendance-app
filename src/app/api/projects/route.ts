@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyTokenEdge } from '@/lib/auth-edge';
 import { generateSlug } from '@/lib/slug';
+import { Project, DatabaseResult } from '@/types/database';
 
 export async function GET(request: NextRequest) {
   try {
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
         [slug]
       );
       
-      if (existing.length === 0) {
+      if ((existing as { id: number }[]).length === 0) {
         break;
       }
       
@@ -74,7 +75,7 @@ export async function POST(request: NextRequest) {
       [name, slug, description, status]
     );
 
-    const insertResult = result as any;
+    const insertResult = result as DatabaseResult;
     const projectId = insertResult.insertId;
 
     // Fetch the created project
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { message: 'Project created successfully', project: (rows as any[])[0] },
+      { message: 'Project created successfully', project: (rows as Project[])[0] },
       { status: 201 }
     );
   } catch (error) {

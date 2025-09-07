@@ -86,7 +86,7 @@ export async function initializeDatabase() {
     );
 
     if (!Array.isArray(existingAdmin) || existingAdmin.length === 0) {
-      const bcrypt = require('bcryptjs');
+      const bcrypt = await import('bcryptjs');
       const hashedPassword = await bcrypt.hash('admin123', 10);
       
       await connection.query(

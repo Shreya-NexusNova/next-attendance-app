@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
 import { verifyTokenEdge } from '@/lib/auth-edge';
+import { Project } from '@/types/database';
 
 export async function GET(
   request: NextRequest,
@@ -25,7 +26,7 @@ export async function GET(
       [projectId]
     );
 
-    const projects = projectRows as any[];
+    const projects = projectRows as Project[];
     if (projects.length === 0) {
       return NextResponse.json(
         { error: 'Project not found' },
@@ -90,7 +91,7 @@ export async function PUT(
 
     return NextResponse.json({
       message: 'Project updated successfully',
-      project: (rows as any[])[0]
+      project: (rows as Project[])[0]
     });
   } catch (error) {
     console.error('Error updating project:', error);

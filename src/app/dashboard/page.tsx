@@ -166,30 +166,6 @@ export default function DashboardPage() {
     setShowEditProject(true);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'ongoing':
-        return 'bg-green-100 text-green-800';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800';
-      case 'paused':
-        return 'bg-yellow-100 text-yellow-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getProjectIcon = (index: number) => {
-    const icons = [
-      '/window.svg', // Window icon
-      '/file.svg', // File icon
-      '/globe.svg', // Globe icon
-      '/vercel.svg', // Vercel icon
-      '/next.svg', // Next.js icon
-      '/window.svg', // Window icon (fallback)
-    ];
-    return icons[index % icons.length];
-  };
 
   if (isLoading) {
     return (
