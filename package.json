@@ -7,7 +7,9 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "setup": "node setup.js"
+    "setup": "node setup.js",
+    "deploy:ionos": "./deploy-ionos.sh",
+    "build:production": "NODE_ENV=production next build"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
