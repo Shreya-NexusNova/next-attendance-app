@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
       ])
       .toArray() as unknown as AttendanceRecord[];
 
-    // Generate date range
+    // Generate date range to include all days in the range
     const start = new Date(startDate);
     const end = new Date(endDate);
     const dates = [];
