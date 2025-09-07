@@ -1,6 +1,17 @@
 import { NextResponse } from 'next/server';
 import pool from '@/lib/db';
 
+interface TableInfo {
+  [key: string]: {
+    columns: unknown[];
+    rowCount: number;
+  };
+}
+
+interface DatabaseInfo {
+  current_db: string;
+}
+
 export async function GET() {
   try {
     console.log('🔍 Checking database status...');
@@ -13,16 +24,16 @@ export async function GET() {
     
     // Get list of tables
     const [tables] = await connection.query('SHOW TABLES');
-    const tableNames = (tables as any[]).map(table => Object.values(table)[0]);
+    const tableNames = (tables as Record<string, unknown>[]).map(table => Object.values(table)[0] as string);
     
     // Get table details
-    const tableDetails = {};
+    const tableDetails: TableInfo = {};
     for (const tableName of tableNames) {
       const [columns] = await connection.query(`DESCRIBE ${tableName}`);
       const [count] = await connection.query(`SELECT COUNT(*) as count FROM ${tableName}`);
       tableDetails[tableName] = {
-        columns: columns,
-        rowCount: (count as any[])[0].count
+        columns: columns as unknown[],
+        rowCount: (count as { count: number }[])[0].count
       };
     }
     
@@ -30,7 +41,7 @@ export async function GET() {
     
     return NextResponse.json({
       status: 'connected',
-      database: (dbInfo as any[])[0].current_db,
+      database: (dbInfo as DatabaseInfo[])[0].current_db,
       tables: tableNames,
       tableDetails: tableDetails,
       timestamp: new Date().toISOString(),
