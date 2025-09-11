@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import toast, { Toaster } from 'react-hot-toast';
 
 interface Project {
   _id: string;
@@ -31,8 +32,9 @@ export default function DashboardPage() {
   const [editProject, setEditProject] = useState({ name: '', description: '', status: 'ongoing' });
   const [showDeleteProjectModal, setShowDeleteProjectModal] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [isCreatingProject, setIsCreatingProject] = useState(false);
+  const [isUpdatingProject, setIsUpdatingProject] = useState(false);
+  const [isDeletingProject, setIsDeletingProject] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -80,6 +82,7 @@ export default function DashboardPage() {
 
   const handleAddProject = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsCreatingProject(true);
     try {
       const response = await fetch('/api/projects', {
         method: 'POST',
@@ -90,10 +93,16 @@ export default function DashboardPage() {
       if (response.ok) {
         setNewProject({ name: '', description: '' });
         setShowAddProject(false);
+        toast.success('Project created successfully!');
         fetchProjects();
+      } else {
+        toast.error('Failed to create project');
       }
     } catch (error) {
       console.error('Error adding project:', error);
+      toast.error('Error creating project');
+    } finally {
+      setIsCreatingProject(false);
     }
   };
 
@@ -101,6 +110,7 @@ export default function DashboardPage() {
     e.preventDefault();
     if (!editingProject) return;
     
+    setIsUpdatingProject(true);
     try {
       const response = await fetch(`/api/projects/${editingProject._id}`, {
         method: 'PUT',
@@ -112,10 +122,16 @@ export default function DashboardPage() {
         setEditProject({ name: '', description: '', status: 'ongoing' });
         setShowEditProject(false);
         setEditingProject(null);
+        toast.success('Project updated successfully!');
         fetchProjects();
+      } else {
+        toast.error('Failed to update project');
       }
     } catch (error) {
       console.error('Error updating project:', error);
+      toast.error('Error updating project');
+    } finally {
+      setIsUpdatingProject(false);
     }
   };
 
@@ -130,6 +146,7 @@ export default function DashboardPage() {
   const confirmDeleteProject = async () => {
     if (!projectToDelete) return;
 
+    setIsDeletingProject(true);
     try {
       const response = await fetch(`/api/projects/${projectToDelete._id}`, {
         method: 'DELETE',
@@ -138,21 +155,20 @@ export default function DashboardPage() {
       if (response.ok) {
         setShowDeleteProjectModal(false);
         setProjectToDelete(null);
-        setSuccessMessage('Project deleted successfully!');
-        setShowSuccessModal(true);
+        toast.success('Project deleted successfully!');
         fetchProjects();
       } else {
         setShowDeleteProjectModal(false);
         setProjectToDelete(null);
-        setSuccessMessage('Error deleting project');
-        setShowSuccessModal(true);
+        toast.error('Error deleting project');
       }
     } catch (error) {
       console.error('Error deleting project:', error);
       setShowDeleteProjectModal(false);
       setProjectToDelete(null);
-      setSuccessMessage('Error deleting project');
-      setShowSuccessModal(true);
+      toast.error('Error deleting project');
+    } finally {
+      setIsDeletingProject(false);
     }
   };
 
@@ -180,6 +196,30 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen relative" style={{ background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)' }}>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#4ade80',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 4000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       {/* Header */}
       <header className="relative z-10" style={{ 
         background: 'rgba(255, 255, 255, 0.95)', 
@@ -383,10 +423,14 @@ export default function DashboardPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-md text-white font-semibold"
+                  disabled={isCreatingProject}
+                  className="px-4 py-2 rounded-md text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                   style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}
                 >
-                  Create Project
+                  {isCreatingProject && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  )}
+                  <span>{isCreatingProject ? 'Creating...' : 'Create Project'}</span>
                 </button>
               </div>
             </form>
@@ -450,10 +494,14 @@ export default function DashboardPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-md text-white font-semibold"
+                  disabled={isUpdatingProject}
+                  className="px-4 py-2 rounded-md text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                   style={{ background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' }}
                 >
-                  Update Project
+                  {isUpdatingProject && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  )}
+                  <span>{isUpdatingProject ? 'Updating...' : 'Update Project'}</span>
                 </button>
               </div>
             </form>
@@ -489,9 +537,13 @@ export default function DashboardPage() {
                 </button>
                 <button
                   onClick={confirmDeleteProject}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  disabled={isDeletingProject}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                 >
-                  Delete
+                  {isDeletingProject && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  )}
+                  <span>{isDeletingProject ? 'Deleting...' : 'Delete'}</span>
                 </button>
               </div>
             </div>
@@ -499,30 +551,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Success/Error Modal */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="text-center">
-              <div className="flex-shrink-0 w-10 h-10 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {successMessage.includes('Error') ? 'Error' : 'Success'}
-              </h3>
-              <p className="text-sm text-gray-500 mb-6">{successMessage}</p>
-              <button
-                onClick={() => setShowSuccessModal(false)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

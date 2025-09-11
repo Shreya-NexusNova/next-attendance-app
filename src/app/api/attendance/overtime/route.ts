@@ -40,7 +40,7 @@ export async function PUT(request: NextRequest) {
     const result = await db.collection('attendance').updateOne(
       { 
         contractor_id: new ObjectId(contractorId), 
-        project_id: projectId, 
+        project_id: new ObjectId(projectId), 
         date: date 
       },
       { 

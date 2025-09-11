@@ -33,11 +33,19 @@ export async function GET(
       );
     }
 
-    // Get contractors for this project
-    const contractors = await db.collection('contractors')
-      .find({ project_id: projectId })
+    // Get contractors for this project - try both ObjectId and string
+    let contractors = await db.collection('contractors')
+      .find({ project_id: new ObjectId(projectId) })
       .sort({ name: 1 })
       .toArray();
+    
+    // If no contractors found with ObjectId, try with string
+    if (contractors.length === 0) {
+      contractors = await db.collection('contractors')
+        .find({ project_id: projectId })
+        .sort({ name: 1 })
+        .toArray();
+    }
 
     return NextResponse.json({
       project,

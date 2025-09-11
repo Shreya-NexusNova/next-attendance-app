@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/db';
 import { verifyTokenEdge } from '@/lib/auth-edge';
 import { Contractor } from '@/types/database';
+import { ObjectId } from 'mongodb';
 
 export async function GET(
   request: NextRequest,
@@ -22,10 +23,19 @@ export async function GET(
 
     const db = await getDatabase();
 
-    const contractors = await db.collection('contractors')
-      .find({ project_id: projectId })
+    // Try both ObjectId and string project_id to handle existing data
+    let contractors = await db.collection('contractors')
+      .find({ project_id: new ObjectId(projectId) })
       .sort({ name: 1 })
       .toArray();
+    
+    // If no contractors found with ObjectId, try with string
+    if (contractors.length === 0) {
+      contractors = await db.collection('contractors')
+        .find({ project_id: projectId })
+        .sort({ name: 1 })
+        .toArray();
+    }
 
     return NextResponse.json({ contractors });
   } catch (error) {
@@ -65,7 +75,7 @@ export async function POST(
     const db = await getDatabase();
 
     const contractorData = {
-      project_id: projectId,
+      project_id: new ObjectId(projectId),
       name,
       email,
       phone,

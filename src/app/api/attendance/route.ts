@@ -29,18 +29,26 @@ export async function GET(request: NextRequest) {
 
     const db = await getDatabase();
 
-    // Get contractors for the project
-    const contractors = await db.collection('contractors')
-      .find({ project_id: projectId })
+    // Get contractors for the project - try both ObjectId and string
+    let contractors = await db.collection('contractors')
+      .find({ project_id: new ObjectId(projectId) })
       .sort({ name: 1 })
       .toArray() as unknown as Contractor[];
+    
+    // If no contractors found with ObjectId, try with string
+    if (contractors.length === 0) {
+      contractors = await db.collection('contractors')
+        .find({ project_id: projectId })
+        .sort({ name: 1 })
+        .toArray() as unknown as Contractor[];
+    }
 
     // Get attendance records for the date
     const attendance = await db.collection('attendance')
       .aggregate([
         {
           $match: {
-            project_id: projectId,
+            project_id: new ObjectId(projectId),
             date: date
           }
         },
@@ -116,7 +124,7 @@ export async function POST(request: NextRequest) {
       await session.withTransaction(async () => {
         // Delete existing attendance records for this date and project
         await db.collection('attendance').deleteMany(
-          { project_id: projectId, date: date },
+          { project_id: new ObjectId(projectId), date: date },
           { session }
         );
 
@@ -126,7 +134,7 @@ export async function POST(request: NextRequest) {
           if (record.contractorId && record.status) {
             recordsToInsert.push({
               contractor_id: new ObjectId(record.contractorId),
-              project_id: projectId,
+              project_id: new ObjectId(projectId),
               date: date,
               status: record.status,
               overtime_hours: record.overtimeHours || 0,

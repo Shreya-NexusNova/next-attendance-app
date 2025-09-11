@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import toast, { Toaster } from 'react-hot-toast';
 
 interface Contractor {
   _id: string;
@@ -56,8 +57,9 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
   const [isSavingOvertime, setIsSavingOvertime] = useState(false);
   const [showDeleteContractorModal, setShowDeleteContractorModal] = useState(false);
   const [contractorToDelete, setContractorToDelete] = useState<Contractor | null>(null);
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [isAddingContractor, setIsAddingContractor] = useState(false);
+  const [isUpdatingContractor, setIsUpdatingContractor] = useState(false);
+  const [isDeletingContractor, setIsDeletingContractor] = useState(false);
   const router = useRouter();
 
   // Resolve params
@@ -181,17 +183,14 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
       });
 
       if (response.ok) {
-        setSuccessMessage('Attendance saved successfully!');
-        setShowSuccessModal(true);
+        toast.success('Attendance saved successfully!');
         fetchAttendance();
       } else {
-        setSuccessMessage('Error saving attendance');
-        setShowSuccessModal(true);
+        toast.error('Error saving attendance');
       }
     } catch (error) {
       console.error('Error saving attendance:', error);
-      setSuccessMessage('Error saving attendance');
-      setShowSuccessModal(true);
+      toast.error('Error saving attendance');
     } finally {
       setIsSaving(false);
     }
@@ -201,6 +200,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
     if (!project) return;
     
     e.preventDefault();
+    setIsAddingContractor(true);
     try {
       const response = await fetch(`/api/projects/${project._id}/contractors`, {
         method: 'POST',
@@ -211,10 +211,16 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
       if (response.ok) {
         setNewContractor({ name: '', email: '', phone: '' });
         setShowAddContractor(false);
+        toast.success('Contractor added successfully!');
         fetchContractors();
+      } else {
+        toast.error('Failed to add contractor');
       }
     } catch (error) {
       console.error('Error adding contractor:', error);
+      toast.error('Error adding contractor');
+    } finally {
+      setIsAddingContractor(false);
     }
   };
 
@@ -222,6 +228,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
     e.preventDefault();
     if (!editingContractor) return;
 
+    setIsUpdatingContractor(true);
     try {
       const response = await fetch(`/api/contractors/${editingContractor._id}`, {
         method: 'PUT',
@@ -233,10 +240,16 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
         setEditContractor({ name: '', email: '', phone: '' });
         setShowEditContractor(false);
         setEditingContractor(null);
+        toast.success('Contractor updated successfully!');
         fetchContractors();
+      } else {
+        toast.error('Failed to update contractor');
       }
     } catch (error) {
       console.error('Error updating contractor:', error);
+      toast.error('Error updating contractor');
+    } finally {
+      setIsUpdatingContractor(false);
     }
   };
 
@@ -251,6 +264,7 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
   const confirmDeleteContractor = async () => {
     if (!contractorToDelete) return;
 
+    setIsDeletingContractor(true);
     try {
       const response = await fetch(`/api/contractors/${contractorToDelete._id}`, {
         method: 'DELETE',
@@ -259,21 +273,20 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
       if (response.ok) {
         setShowDeleteContractorModal(false);
         setContractorToDelete(null);
-        setSuccessMessage('Contractor deleted successfully!');
-        setShowSuccessModal(true);
+        toast.success('Contractor deleted successfully!');
         fetchContractors();
       } else {
         setShowDeleteContractorModal(false);
         setContractorToDelete(null);
-        setSuccessMessage('Error deleting contractor');
-        setShowSuccessModal(true);
+        toast.error('Error deleting contractor');
       }
     } catch (error) {
       console.error('Error deleting contractor:', error);
       setShowDeleteContractorModal(false);
       setContractorToDelete(null);
-      setSuccessMessage('Error deleting contractor');
-      setShowSuccessModal(true);
+      toast.error('Error deleting contractor');
+    } finally {
+      setIsDeletingContractor(false);
     }
   };
 
@@ -306,14 +319,13 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+        toast.success('Attendance exported successfully!');
       } else {
-        setSuccessMessage('Error exporting attendance');
-        setShowSuccessModal(true);
+        toast.error('Error exporting attendance');
       }
     } catch (error) {
       console.error('Error exporting attendance:', error);
-      setSuccessMessage('Error exporting attendance');
-      setShowSuccessModal(true);
+      toast.error('Error exporting attendance');
     } finally {
       setIsExporting(false);
     }
@@ -353,18 +365,15 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
 
       if (response.ok) {
         const data = await response.json();
-        setSuccessMessage(`Overtime saved successfully! Total: ${data.overtimeHours} hours`);
-        setShowSuccessModal(true);
+        toast.success(`Overtime saved successfully! Total: ${data.overtimeHours} hours`);
         setShowOvertimeModal(false);
         fetchAttendance(); // Refresh attendance data
       } else {
-        setSuccessMessage('Error saving overtime');
-        setShowSuccessModal(true);
+        toast.error('Error saving overtime');
       }
     } catch (error) {
       console.error('Error saving overtime:', error);
-      setSuccessMessage('Error saving overtime');
-      setShowSuccessModal(true);
+      toast.error('Error saving overtime');
     } finally {
       setIsSavingOvertime(false);
     }
@@ -383,6 +392,30 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
 
   return (
     <div className="min-h-screen" style={{ background: '#f8f9fa' }}>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 3000,
+            iconTheme: {
+              primary: '#4ade80',
+              secondary: '#fff',
+            },
+          },
+          error: {
+            duration: 4000,
+            iconTheme: {
+              primary: '#ef4444',
+              secondary: '#fff',
+            },
+          },
+        }}
+      />
       {/* Header */}
       <header className="bg-white shadow-lg sticky top-0 z-50" style={{ boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -442,34 +475,44 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
             <button
               onClick={exportAttendance}
               disabled={isExporting}
-              className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               style={{ 
                 background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
                 boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
               }}
             >
-              {isExporting ? 'Exporting...' : (
-                <>
-                  <span className="hidden sm:inline">Export to Excel</span>
-                  <span className="sm:hidden">Export</span>
-                </>
+              {isExporting && (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               )}
+              <span>
+                {isExporting ? 'Exporting...' : (
+                  <>
+                    <span className="hidden sm:inline">Export to Excel</span>
+                    <span className="sm:hidden">Export</span>
+                  </>
+                )}
+              </span>
             </button>
             <button
               onClick={saveAttendance}
               disabled={isSaving}
-              className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+              className="px-4 py-2 sm:px-6 sm:py-3 rounded-lg text-white font-semibold transition-all duration-300 hover:transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base flex items-center space-x-2"
               style={{ 
                 background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)',
                 boxShadow: '0 6px 20px rgba(0, 86, 179, 0.3)'
               }}
             >
-              {isSaving ? 'Saving...' : (
-                <>
-                  <span className="hidden sm:inline">Save Attendance</span>
-                  <span className="sm:hidden">Save</span>
-                </>
+              {isSaving && (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               )}
+              <span>
+                {isSaving ? 'Saving...' : (
+                  <>
+                    <span className="hidden sm:inline">Save Attendance</span>
+                    <span className="sm:hidden">Save</span>
+                  </>
+                )}
+              </span>
             </button>
           </div>
           </div>
@@ -646,10 +689,14 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-md text-white font-semibold"
+                  disabled={isAddingContractor}
+                  className="px-4 py-2 rounded-md text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                   style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}
                 >
-                  Add Contractor
+                  {isAddingContractor && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  )}
+                  <span>{isAddingContractor ? 'Adding...' : 'Add Contractor'}</span>
                 </button>
               </div>
             </form>
@@ -719,10 +766,13 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
               <button
                 onClick={saveOvertime}
                 disabled={isSavingOvertime}
-                className="px-4 py-2 rounded-md text-white font-semibold disabled:opacity-50"
+                className="px-4 py-2 rounded-md text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                 style={{ background: 'linear-gradient(135deg, #0b529e 0%, #043366 100%)' }}
               >
-                {isSavingOvertime ? 'Saving...' : 'Save'}
+                {isSavingOvertime && (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                )}
+                <span>{isSavingOvertime ? 'Saving...' : 'Save'}</span>
               </button>
             </div>
           </div>
@@ -782,10 +832,14 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-md text-white font-semibold"
+                  disabled={isUpdatingContractor}
+                  className="px-4 py-2 rounded-md text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                   style={{ background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)' }}
                 >
-                  Update Contractor
+                  {isUpdatingContractor && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  )}
+                  <span>{isUpdatingContractor ? 'Updating...' : 'Update Contractor'}</span>
                 </button>
               </div>
             </form>
@@ -821,9 +875,13 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
                 </button>
                 <button
                   onClick={confirmDeleteContractor}
-                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  disabled={isDeletingContractor}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                 >
-                  Delete
+                  {isDeletingContractor && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  )}
+                  <span>{isDeletingContractor ? 'Deleting...' : 'Delete'}</span>
                 </button>
               </div>
             </div>
@@ -831,30 +889,6 @@ export default function AttendancePage({ params }: { params: Promise<{ projectSl
         </div>
       )}
 
-      {/* Success/Error Modal */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 modal-backdrop flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="text-center">
-              <div className="flex-shrink-0 w-10 h-10 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                {successMessage.includes('Error') ? 'Error' : 'Success'}
-              </h3>
-              <p className="text-sm text-gray-500 mb-6">{successMessage}</p>
-              <button
-                onClick={() => setShowSuccessModal(false)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                OK
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

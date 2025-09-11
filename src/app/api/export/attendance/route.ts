@@ -41,18 +41,26 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get contractors for the project
-    const contractors = await db.collection('contractors')
-      .find({ project_id: projectId })
+    // Get contractors for the project - try both ObjectId and string
+    let contractors = await db.collection('contractors')
+      .find({ project_id: new ObjectId(projectId) })
       .sort({ name: 1 })
       .toArray() as unknown as Contractor[];
+    
+    // If no contractors found with ObjectId, try with string
+    if (contractors.length === 0) {
+      contractors = await db.collection('contractors')
+        .find({ project_id: projectId })
+        .sort({ name: 1 })
+        .toArray() as unknown as Contractor[];
+    }
 
     // Get attendance records for the date range
     const attendance = await db.collection('attendance')
       .aggregate([
         {
           $match: {
-            project_id: projectId,
+            project_id: new ObjectId(projectId),
             date: { $gte: startDate, $lte: endDate }
           }
         },
