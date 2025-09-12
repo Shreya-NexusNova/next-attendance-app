@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const contractors = await db.collection('contractors').find({}).toArray();
     
     let updatedCount = 0;
-    let errors = [];
+    const errors: Array<{ contractor_id: ObjectId; project_id: string | ObjectId; error: string }> = [];
     
     for (const contractor of contractors) {
       try {
@@ -38,11 +38,12 @@ export async function POST(request: NextRequest) {
           
           updatedCount++;
         }
-      } catch (error) {
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
         errors.push({
           contractor_id: contractor._id,
           project_id: contractor.project_id,
-          error: error.message
+          error: errorMessage
         });
       }
     }
